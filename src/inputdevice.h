@@ -18,27 +18,29 @@
 #ifndef INPUTDEVICE_H
 #define INPUTDEVICE_H
 
-#include "setjoystick.h"
-
-#include <SDL2/SDL_joystick.h>
-#include <SDL2/SDL_platform.h>
-
 #include <QObject>
 #include <QList>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 #include <QRegExp>
 
-class AntiMicroSettings;
-class SetJoystick;
-class QXmlStreamReader;
-class QXmlStreamWriter;
+#ifdef USE_SDL_2
+#include <SDL2/SDL_joystick.h>
+#include <SDL2/SDL_platform.h>
+#else
+#include <SDL/SDL_joystick.h>
+typedef Sint32 SDL_JoystickID;
+#endif
 
+#include "setjoystick.h"
+#include "common.h"
+#include "antimicrosettings.h"
 
 class InputDevice : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit InputDevice(int deviceIndex, AntiMicroSettings *settings, QObject *parent = nullptr);
+    explicit InputDevice(int deviceIndex, AntiMicroSettings *settings, QObject *parent = 0);
     virtual ~InputDevice();
 
     virtual int getNumberButtons();
@@ -66,8 +68,10 @@ public:
     virtual QString getStringIdentifier();
     virtual QString getXmlName() = 0;
     virtual void closeSDLDevice() = 0;
+#ifdef USE_SDL_2
     virtual SDL_JoystickID getSDLJoystickID() = 0;
     QString getSDLPlatform();
+#endif
     virtual bool isGameController();
     virtual bool isKnownController();
 
@@ -86,7 +90,7 @@ public:
     virtual int getNumberRawAxes() = 0;
     virtual int getNumberRawHats() = 0;
 
-    int getDeviceKeyPressTime(); // unsigned
+    unsigned int getDeviceKeyPressTime();
 
     void setIndex(int index);
     bool isDeviceEdited();
@@ -124,19 +128,39 @@ public:
     int getRawAxisDeadZone();
     void rawAxisEvent(int index, int value);
 
+    static const int NUMBER_JOYSETS;
+    static const int DEFAULTKEYPRESSTIME;
+    static const unsigned int DEFAULTKEYREPEATDELAY;
+    static const unsigned int DEFAULTKEYREPEATRATE;
+    static const int RAISEDDEADZONE;
+
 protected:
     void enableSetConnections(SetJoystick *setstick);
     bool elementsHaveNames();
-    SDL_Joystick* getJoyHandle() const;
 
-    QHash<int, SetJoystick*>& getJoystick_sets();
-    QHash<int, JoyAxis::ThrottleTypes>& getCali();
-    SDL_JoystickID* getJoystickID();
+    SDL_Joystick* joyhandle;
+    QHash<int, SetJoystick*> joystick_sets;
+    QHash<int, JoyAxis::ThrottleTypes> cali;
+    AntiMicroSettings *settings;
+    int active_set;
+    int joyNumber;
+    int buttonDownCount;
+    SDL_JoystickID joystickID;
+    unsigned int keyPressTime;
+    bool deviceEdited;
 
-    int rawAxisDeadZone;
-    int keyPressTime; // unsigned
+    bool keyRepeatEnabled;
+    int keyRepeatDelay;
+    int keyRepeatRate;
     QString profileName;
 
+    QList<bool> buttonstates;
+    QList<int> axesstates;
+    QList<int> dpadstates;
+
+    int rawAxisDeadZone;
+
+    static QRegExp emptyGUID;
 
 signals:
     void setChangeActivated(int index);
@@ -170,7 +194,7 @@ public slots:
     void changeSetStickButtonAssociation(int button_index, int stick_index, int originset, int newset, int mode);
     void changeSetDPadButtonAssociation(int button_index, int dpad_index, int originset, int newset, int mode);
     void changeSetVDPadButtonAssociation(int button_index, int dpad_index, int originset, int newset, int mode);
-    void setDeviceKeyPressTime(int newPressTime); // .., unsigned
+    void setDeviceKeyPressTime(unsigned int newPressTime);
     void profileEdited();
     void setProfileName(QString value);
     void haltServices();
@@ -178,10 +202,6 @@ public slots:
 
     virtual void readConfig(QXmlStreamReader *xml);
     virtual void writeConfig(QXmlStreamWriter *xml);
-    virtual void buttonClickEvent(int buttonindex);
-    virtual void buttonReleaseEvent(int buttonindex);
-    virtual void dpadButtonClickEvent(int buttonindex);
-    virtual void dpadButtonReleaseEvent(int buttonindex);
 
     void establishPropertyUpdatedConnection();
     void disconnectPropertyUpdatedConnection();
@@ -193,10 +213,14 @@ protected slots:
     void buttonUpEvent(int setindex, int buttonindex);
     virtual void axisActivatedEvent(int setindex, int axisindex, int value);
     virtual void axisReleasedEvent(int setindex, int axisindex, int value);
+    virtual void buttonClickEvent(int buttonindex);
+    virtual void buttonReleaseEvent(int buttonindex);
     virtual void axisButtonDownEvent(int setindex, int axisindex, int buttonindex);
     virtual void axisButtonUpEvent(int setindex, int axisindex, int buttonindex);
     virtual void dpadButtonDownEvent(int setindex, int dpadindex, int buttonindex);
     virtual void dpadButtonUpEvent(int setindex, int dpadindex, int buttonindex);
+    virtual void dpadButtonClickEvent(int buttonindex);
+    virtual void dpadButtonReleaseEvent(int buttonindex);
     virtual void stickButtonDownEvent(int setindex, int stickindex, int buttonindex);
     virtual void stickButtonUpEvent(int setindex, int stickindex, int buttonindex);
 
@@ -210,29 +234,6 @@ protected slots:
     void updateSetStickNames(int stickIndex);
     void updateSetDPadNames(int dpadIndex);
     void updateSetVDPadNames(int vdpadIndex);
-
-private:
-    QList<bool>& getButtonstatesLocal();
-    QList<int>& getAxesstatesLocal();
-    QList<int>& getDpadstatesLocal();
-
-    SDL_Joystick* m_joyhandle;
-    QHash<int, SetJoystick*> joystick_sets;
-    QHash<int, JoyAxis::ThrottleTypes> cali;
-    AntiMicroSettings *m_settings;
-    int active_set;
-    int joyNumber;
-    int buttonDownCount;
-    SDL_JoystickID joystickID;
-    bool deviceEdited;
-
-    bool keyRepeatEnabled;
-    int keyRepeatDelay;
-    int keyRepeatRate;
-
-    QList<bool> buttonstates;
-    QList<int> axesstates;
-    QList<int> dpadstates;
 };
 
 Q_DECLARE_METATYPE(InputDevice*)

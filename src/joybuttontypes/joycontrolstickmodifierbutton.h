@@ -21,23 +21,22 @@
 #include "joybuttontypes/joygradientbutton.h"
 
 class JoyControlStick;
-class SetJoystick;
 
 class JoyControlStickModifierButton : public JoyGradientButton
 {
     Q_OBJECT
-
 public:
-    explicit JoyControlStickModifierButton(JoyControlStick *stick, int originset, SetJoystick *parentSet, QObject *parent = nullptr);
+    explicit JoyControlStickModifierButton(JoyControlStick *stick, int originset, SetJoystick *parentSet, QObject *parent = 0);
 
-    virtual QString getPartialName(bool forceFullFormat=false, bool displayNames=false) const;
+    //virtual int getRealJoyNumber();
+    virtual QString getPartialName(bool forceFullFormat=false, bool displayNames=false);
     virtual QString getXmlName();
     virtual double getDistanceFromDeadZone();
     virtual double getMouseDistanceFromDeadZone();
     virtual double getLastMouseDistanceFromDeadZone();
 
-    virtual void setChangeSetCondition(SetChangeCondition condition, bool passive=false, bool updateActiveString=true);
-
+    virtual void setChangeSetCondition(SetChangeCondition condition, bool passive=false);
+    JoyControlStick *getStick();
     virtual void setTurboMode(TurboMode mode);
     virtual bool isPartRealAxis();
     virtual bool isModifierButton();
@@ -45,9 +44,9 @@ public:
     virtual double getAccelerationDistance();
     virtual double getLastAccelerationDistance();
 
-    JoyControlStick *getStick() const;
+    static const QString xmlName;
 
-private:
+protected:
     JoyControlStick *stick;
 
 };

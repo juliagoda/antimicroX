@@ -15,15 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QTime>
 
 #include "logger.h"
 
-#include "messagehandler.h"
-
-#include <QTime>
-#include <QDebug>
-
-Logger* Logger::instance = nullptr;
+Logger* Logger::instance = 0;
 
 /**
  * @brief Outputs log messages to a given text stream. Client code
@@ -36,18 +32,16 @@ Logger* Logger::instance = nullptr;
 Logger::Logger(QTextStream *stream, LogLevel outputLevel, QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     instance = this;
     instance->outputStream = stream;
     instance->outputLevel = outputLevel;
-    instance->errorStream = nullptr;
+    instance->errorStream = 0;
     instance->pendingTimer.setInterval(1);
     instance->pendingTimer.setSingleShot(true);
     instance->writeTime = false;
 
-    connect(instance, &Logger::pendingMessage, instance, &Logger::startPendingTimer);
-    connect(&(instance->pendingTimer), &QTimer::timeout, instance, &Logger::Log);
+    connect(instance, SIGNAL(pendingMessage()), instance, SLOT(startPendingTimer()));
+    connect(&(instance->pendingTimer), SIGNAL(timeout()), instance, SLOT(Log()));
 }
 
 /**
@@ -63,8 +57,6 @@ Logger::Logger(QTextStream *stream, QTextStream *errorStream,
                LogLevel outputLevel, QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     instance = this;
     instance->outputStream = stream;
     instance->outputLevel = outputLevel;
@@ -73,8 +65,8 @@ Logger::Logger(QTextStream *stream, QTextStream *errorStream,
     instance->pendingTimer.setSingleShot(true);
     instance->writeTime = false;
 
-    connect(instance, &Logger::pendingMessage, instance, &Logger::startPendingTimer);
-    connect(&(instance->pendingTimer), &QTimer::timeout, instance, &Logger::Log);
+    connect(instance, SIGNAL(pendingMessage()), instance, SLOT(startPendingTimer()));
+    connect(&(instance->pendingTimer), SIGNAL(timeout()), instance, SLOT(Log()));
 }
 
 /**
@@ -82,8 +74,6 @@ Logger::Logger(QTextStream *stream, QTextStream *errorStream,
  */
 Logger::~Logger()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     closeLogger();
     closeErrorLogger();
 }
@@ -95,9 +85,7 @@ Logger::~Logger()
  */
 void Logger::setLogLevel(LogLevel level)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     QMutexLocker locker(&instance->logMutex);
     Q_UNUSED(locker);
@@ -111,18 +99,14 @@ void Logger::setLogLevel(LogLevel level)
  */
 Logger::LogLevel Logger::getCurrentLogLevel()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     return instance->outputLevel;
 }
 
 void Logger::setCurrentStream(QTextStream *stream)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     QMutexLocker locker(&instance->logMutex);
     Q_UNUSED(locker);
@@ -133,18 +117,14 @@ void Logger::setCurrentStream(QTextStream *stream)
 
 QTextStream* Logger::getCurrentStream()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     return instance->outputStream;
 }
 
 void Logger::setCurrentErrorStream(QTextStream *stream)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     QMutexLocker locker(&instance->logMutex);
     Q_UNUSED(locker);
@@ -159,9 +139,7 @@ void Logger::setCurrentErrorStream(QTextStream *stream)
 
 QTextStream* Logger::getCurrentErrorStream()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     return instance->errorStream;
 }
@@ -176,12 +154,10 @@ QTextStream* Logger::getCurrentErrorStream()
  */
 void Logger::Log()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QMutexLocker locker(&logMutex);
     Q_UNUSED(locker);
 
-    QListIterator<LogMessage> iter(getPendingMessages());
+    QListIterator<LogMessage> iter(pendingMessages);
     while (iter.hasNext())
     {
         LogMessage pendingMessage = iter.next();
@@ -198,13 +174,11 @@ void Logger::Log()
  */
 void Logger::closeLogger(bool closeStream)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (outputStream != nullptr)
+    if (outputStream)
     {
         outputStream->flush();
 
-        if (closeStream && (outputStream->device() != nullptr))
+        if (closeStream && outputStream->device() != 0)
         {
             QIODevice *device = outputStream->device();
             if (device->isOpen())
@@ -221,13 +195,11 @@ void Logger::closeLogger(bool closeStream)
  */
 void Logger::closeErrorLogger(bool closeStream)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (errorStream != nullptr)
+    if (errorStream)
     {
         errorStream->flush();
 
-        if (closeStream && (errorStream->device() != nullptr))
+        if (closeStream && errorStream->device() != 0)
         {
             QIODevice *device = errorStream->device();
             if (device->isOpen())
@@ -238,7 +210,7 @@ void Logger::closeErrorLogger(bool closeStream)
     }
 
     instance->pendingTimer.stop();
-    instance = nullptr;
+    instance = 0;
 }
 
 /**
@@ -251,9 +223,7 @@ void Logger::closeErrorLogger(bool closeStream)
  */
 void Logger::appendLog(LogLevel level, const QString &message, bool newline)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     QMutexLocker locker(&instance->logMutex);
     Q_UNUSED(locker);
@@ -265,6 +235,11 @@ void Logger::appendLog(LogLevel level, const QString &message, bool newline)
 
     instance->pendingMessages.append(temp);
 
+    /*if (!instance->pendingTimer.isActive())
+    {
+        instance->pendingTimer.start();
+    }
+    */
     emit instance->pendingMessage();
 }
 
@@ -277,9 +252,7 @@ void Logger::appendLog(LogLevel level, const QString &message, bool newline)
  */
 void Logger::directLog(LogLevel level, const QString &message, bool newline)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     QMutexLocker locker(&instance->logMutex);
     Q_UNUSED(locker);
@@ -298,34 +271,34 @@ void Logger::directLog(LogLevel level, const QString &message, bool newline)
  */
 void Logger::logMessage(LogMessage msg)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     LogLevel level = msg.level;
     QString message = msg.message;
     bool newline = msg.newline;
 
-    if ((outputLevel != LOG_NONE) && (level <= outputLevel))
+    if (outputLevel != LOG_NONE && level <= outputLevel)
     {
         QString displayTime = "";
         QString initialPrefix = "";
-        QString finalMessage = QString();
-        if ((outputLevel > LOG_INFO) || writeTime)
+        QString finalMessage;
+        if (outputLevel > LOG_INFO || writeTime)
         {
             displayTime = QString("[%1] - ").arg(QTime::currentTime().toString("hh:mm:ss.zzz"));
             initialPrefix = displayTime;
         }
 
         QTextStream *writeStream = outputStream;
-        if ((level < LOG_INFO) && (errorStream != nullptr))
+        if (level < LOG_INFO && errorStream)
         {
             writeStream = errorStream;
         }
 
         finalMessage.append(initialPrefix).append(message);
 
+        //*writeStream << initialPrefix << message;
         if (newline)
         {
             finalMessage.append("\n");
+            //*writeStream << endl;
         }
 
         *writeStream << finalMessage;
@@ -340,8 +313,6 @@ void Logger::logMessage(LogMessage msg)
  */
 QTimer* Logger::getLogTimer()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return &pendingTimer;
 }
 
@@ -350,8 +321,6 @@ QTimer* Logger::getLogTimer()
  */
 void Logger::stopLogTimer()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (pendingTimer.isActive())
     {
         pendingTimer.stop();
@@ -365,9 +334,7 @@ void Logger::stopLogTimer()
  */
 void Logger::setWriteTime(bool status)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     QMutexLocker locker(&instance->logMutex);
     Q_UNUSED(locker);
@@ -382,18 +349,14 @@ void Logger::setWriteTime(bool status)
  */
 bool Logger::getWriteTime()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     return writeTime;
 }
 
 void Logger::startPendingTimer()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_ASSERT(instance != nullptr);
+    Q_ASSERT(instance != 0);
 
     if (!instance->pendingTimer.isActive())
     {
@@ -402,10 +365,7 @@ void Logger::startPendingTimer()
 }
 
 void Logger::setCurrentLogFile(QString filename) {
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-  Q_ASSERT(instance != nullptr);
+  Q_ASSERT(instance != 0);
   
   if( instance->outputFile.isOpen() ) {
     instance->closeLogger(true);
@@ -414,14 +374,11 @@ void Logger::setCurrentLogFile(QString filename) {
   instance->outputFile.open( QIODevice::WriteOnly | QIODevice::Append );
   instance->outFileStream.setDevice( &instance->outputFile );
   instance->setCurrentStream( &instance->outFileStream );
-  instance->LogInfo(QObject::trUtf8("Logging started"), true, true);
+  instance->LogInfo(QObject::tr("Logging started"), true, true);
 }
 
 void Logger::setCurrentErrorLogFile(QString filename) {
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-  Q_ASSERT(instance != nullptr);
+  Q_ASSERT(instance != 0);
 
   if( instance->errorFile.isOpen() ) {
     instance->closeErrorLogger(true);
@@ -430,10 +387,5 @@ void Logger::setCurrentErrorLogFile(QString filename) {
   instance->errorFile.open( QIODevice::WriteOnly | QIODevice::Append );
   instance->outErrorFileStream.setDevice( &instance->errorFile );
   instance->setCurrentErrorStream( &instance->outErrorFileStream );
-}
-
-QList<Logger::LogMessage> const& Logger::getPendingMessages() {
-
-    return pendingMessages;
 }
 

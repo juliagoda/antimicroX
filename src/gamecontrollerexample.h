@@ -19,39 +19,34 @@
 #define GAMECONTROLLEREXAMPLE_H
 
 #include <QWidget>
-#include <QImage>
-
-class QPaintEvent;
-
+#include <QPaintEvent>
 
 class GameControllerExample : public QWidget
 {
     Q_OBJECT
-
 public:
-    explicit GameControllerExample(QWidget *parent = nullptr);
+    explicit GameControllerExample(QWidget *parent = 0);
 
     enum ButtonType {
         Button, AxisX, AxisY,
     };
 
-    static const int MAXBUTTONINDEX = 20; // unsigned
+    static const unsigned int MAXBUTTONINDEX = 20;
 
 protected:
     virtual void paintEvent(QPaintEvent *event);
+
+    QImage controllerimage;
+    QImage buttonimage;
+    QImage axisimage;
+    QImage rotatedaxisimage;
+    int currentIndex;
 
 signals:
     void indexUpdated(int index);
 
 public slots:
     void setActiveButton(int button);
-
-private:
-    QImage controllerimage;
-    QImage buttonimage;
-    QImage axisimage;
-    QImage rotatedaxisimage;
-    int currentIndex;
 };
 
 #endif // GAMECONTROLLEREXAMPLE_H

@@ -22,17 +22,11 @@
 #include <QString>
 #include <QHash>
 #include <QPoint>
-
-#include <X11/extensions/XInput.h>
-#include <X11/extensions/XInput2.h>
 #include <X11/Xlib.h>
-
-
 
 class X11Extras : public QObject
 {
     Q_OBJECT
-
 public:
     struct ptrInformation {
         long id;
@@ -65,8 +59,8 @@ public:
     static QString getXDisplayString();
     QString getWindowTitle(Window window);
     QString getWindowClass(Window window);
-    unsigned long getWindowInFocus(); // unsigned
-    int getGroup1KeySym(int virtualkey); // unsigned (unsigned)
+    unsigned long getWindowInFocus();
+    unsigned int getGroup1KeySym(unsigned int virtualkey);
 
     void x11ResetMouseAccelerationChange();
     void x11ResetMouseAccelerationChange(QString pointerName);
@@ -78,29 +72,28 @@ public:
     static X11Extras* getInstance();
     static void deleteInstance();
 
-    QHash<QString, QString> const& getKnownAliases();
+    static const QString mouseDeviceName;
+    static const QString keyboardDeviceName;
+    static const QString xtestMouseDeviceName;
+
 
 protected:
-    explicit X11Extras(QObject *parent = nullptr);
+    explicit X11Extras(QObject *parent = 0);
 
     void populateKnownAliases();
     bool windowHasProperty(Display *display, Window window, Atom atom);
     bool windowIsViewable(Display *display, Window window);
     bool isWindowRelevant(Display *display, Window window);
 
-    static X11Extras *_instance;  
+    Display *_display;
+    static X11Extras *_instance;
+    QHash<QString, QString> knownAliases;
+    static QString _customDisplayString;
+
+signals:
     
 public slots:
     QPoint getPos();
-
-private:
-    void checkPropertyOnWin(bool windowCorrected, Window& window, Window& parent, Window& finalwindow, Window& root, Window *children, Display *display, unsigned int& num_children);
-    void freeDisplay();
-    void checkFeedback(XFeedbackState *temp, int& num_feedbacks, int& feedback_id);
-    void findVirtualPtr(int num_devices, XIDeviceInfo *current_devices, XIDeviceInfo *mouse_device, XIDeviceInfo *all_devices, QString pointerName);
-
-    QHash<QString, QString> knownAliases;
-    Display *_display;
 };
 
 #endif // X11EXTRAS_H

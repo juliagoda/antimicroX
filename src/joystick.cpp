@@ -15,67 +15,60 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+//#include <QDebug>
+
 #include "joystick.h"
 
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "antimicrosettings.h"
-
-#include <QDebug>
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-
-
+const QString Joystick::xmlName = "joystick";
 
 Joystick::Joystick(SDL_Joystick *joyhandle, int deviceIndex,
                    AntiMicroSettings *settings, QObject *parent) :
     InputDevice(deviceIndex, settings, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    m_joyhandle = joyhandle;
-
+    this->joyhandle = joyhandle;
+#ifdef USE_SDL_2
     joystickID = SDL_JoystickInstanceID(joyhandle);
+#else
+    joyNumber = SDL_JoystickIndex(joyhandle);
+#endif
 
-    for (int i = 0; i < GlobalVariables::InputDevice::NUMBER_JOYSETS; i++)
+    for (int i=0; i < NUMBER_JOYSETS; i++)
     {
         SetJoystick *setstick = new SetJoystick(this, i, this);
-        getJoystick_sets().insert(i, setstick);
+        joystick_sets.insert(i, setstick);
         enableSetConnections(setstick);
     }
 }
 
 QString Joystick::getName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return QString(trUtf8("Joystick")).append(" ").append(QString::number(getRealJoyNumber()));
+    return QString(tr("Joystick")).append(" ").append(QString::number(getRealJoyNumber()));
 }
 
 QString Joystick::getSDLName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString temp = QString();
-
-    if (m_joyhandle != nullptr)
+    QString temp;
+#ifdef USE_SDL_2
+    if (joyhandle)
     {
-        temp = SDL_JoystickName(m_joyhandle);
+        temp = SDL_JoystickName(joyhandle);
     }
-
+#else
+    temp = SDL_JoystickName(joyNumber);
+#endif
     return temp;
 }
 
 QString Joystick::getGUIDString()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    QString temp;
 
-    QString temp = QString();
-
-    SDL_JoystickGUID tempGUID = SDL_JoystickGetGUID(m_joyhandle);
+#ifdef USE_SDL_2
+    SDL_JoystickGUID tempGUID = SDL_JoystickGetGUID(joyhandle);
     char guidString[65] = {'0'};
     SDL_JoystickGetGUIDString(tempGUID, guidString, sizeof(guidString));
     temp = QString(guidString);
+#endif
 
     // Not available on SDL 1.2. Return empty string in that case.
     return temp;
@@ -83,53 +76,45 @@ QString Joystick::getGUIDString()
 
 QString Joystick::getXmlName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::Joystick::xmlName;
+    return this->xmlName;
 }
 
 void Joystick::closeSDLDevice()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((m_joyhandle != nullptr) && SDL_JoystickGetAttached(m_joyhandle))
+#ifdef USE_SDL_2
+    if (joyhandle && SDL_JoystickGetAttached(joyhandle))
     {
-        SDL_JoystickClose(m_joyhandle);
+        SDL_JoystickClose(joyhandle);
     }
+#else
+    if (joyhandle && SDL_JoystickOpened(joyNumber))
+    {
+        SDL_JoystickClose(joyhandle);
+    }
+#endif
 }
 
 int Joystick::getNumberRawButtons()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    int numbuttons = SDL_JoystickNumButtons(m_joyhandle);
+    int numbuttons = SDL_JoystickNumButtons(joyhandle);
     return numbuttons;
 }
 
 int Joystick::getNumberRawAxes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    int numaxes = SDL_JoystickNumAxes(m_joyhandle);
+    int numaxes = SDL_JoystickNumAxes(joyhandle);
     return numaxes;
 }
 
 int Joystick::getNumberRawHats()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    int numhats = SDL_JoystickNumHats(m_joyhandle);
+    int numhats = SDL_JoystickNumHats(joyhandle);
     return numhats;
 }
 
+#ifdef USE_SDL_2
 SDL_JoystickID Joystick::getSDLJoystickID()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return joystickID;
 }
-
-SDL_Joystick* Joystick::getJoyhandle() const {
-
-    return m_joyhandle;
-}
+#endif

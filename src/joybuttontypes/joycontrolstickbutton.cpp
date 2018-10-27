@@ -15,89 +15,69 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joycontrolstickbutton.h"
+//#include <QDebug>
+#include <cmath>
+#include <QStringList>
 
-#include "globalvariables.h"
-#include "messagehandler.h"
+#include "joycontrolstickbutton.h"
 #include "joycontrolstick.h"
-#include "joycontrolstickmodifierbutton.h"
-#include "setjoystick.h"
 #include "event.h"
 
-#include <cmath>
-
-#include <QStringList>
-#include <QDebug>
-
+const QString JoyControlStickButton::xmlName = "stickbutton";
 
 JoyControlStickButton::JoyControlStickButton(JoyControlStick *stick, int index, int originset, SetJoystick *parentSet, QObject *parent) :
     JoyGradientButton(index, originset, parentSet, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->stick = stick;
 }
-
 
 JoyControlStickButton::JoyControlStickButton(JoyControlStick *stick, JoyStickDirectionsType::JoyStickDirections index, int originset, SetJoystick *parentSet, QObject *parent) :
-    JoyGradientButton(index, originset, parentSet, parent)
+    JoyGradientButton((int)index, originset, parentSet, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->stick = stick;
 }
 
-
-QString JoyControlStickButton::getDirectionName() const
+QString JoyControlStickButton::getDirectionName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QString label = QString();
-
-    switch(m_index)
+    if (index == JoyControlStick::StickUp)
     {
-    case 1:
-        label.append(trUtf8("Up"));
-        break;
-
-    case 2:
-        label.append(trUtf8("Up")).append("+").append(trUtf8("Right"));
-        break;
-
-    case 3:
-        label.append(trUtf8("Right"));
-        break;
-
-    case 4:
-        label.append(trUtf8("Down")).append("+").append(trUtf8("Right"));
-        break;
-
-    case 5:
-        label.append(trUtf8("Down"));
-        break;
-
-    case 6:
-        label.append(trUtf8("Down")).append("+").append(trUtf8("Left"));
-        break;
-
-    case 7:
-        label.append(trUtf8("Left"));
-        break;
-
-    case 8:
-        label.append(trUtf8("Up")).append("+").append(trUtf8("Left"));
-        break;
-
+        label.append(tr("Up"));
+    }
+    else if (index == JoyControlStick::StickDown)
+    {
+        label.append(tr("Down"));
+    }
+    else if (index == JoyControlStick::StickLeft)
+    {
+        label.append(tr("Left"));
+    }
+    else if (index == JoyControlStick::StickRight)
+    {
+        label.append(tr("Right"));
+    }
+    else if (index == JoyControlStick::StickLeftUp)
+    {
+        label.append(tr("Up")).append("+").append(tr("Left"));
+    }
+    else if (index == JoyControlStick::StickLeftDown)
+    {
+        label.append(tr("Down")).append("+").append(tr("Left"));
+    }
+    else if (index == JoyControlStick::StickRightUp)
+    {
+        label.append(tr("Up")).append("+").append(tr("Right"));
+    }
+    else if (index == JoyControlStick::StickRightDown)
+    {
+        label.append(tr("Down")).append("+").append(tr("Right"));
     }
 
     return label;
 }
 
-
-QString JoyControlStickButton::getPartialName(bool forceFullFormat, bool displayNames) const
+QString JoyControlStickButton::getPartialName(bool forceFullFormat, bool displayNames)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QString temp = stick->getPartialName(forceFullFormat, displayNames);
 
     temp.append(": ");
@@ -106,7 +86,7 @@ QString JoyControlStickButton::getPartialName(bool forceFullFormat, bool display
     {
         if (forceFullFormat)
         {
-            temp.append(trUtf8("Button")).append(" ");
+            temp.append(tr("Button")).append(" ");
         }
 
         temp.append(buttonName);
@@ -115,26 +95,22 @@ QString JoyControlStickButton::getPartialName(bool forceFullFormat, bool display
     {
         if (forceFullFormat)
         {
-            temp.append(trUtf8("Button")).append(" ");
+            temp.append(tr("Button")).append(" ");
         }
 
         temp.append(defaultButtonName);
     }
     else
     {
-        temp.append(trUtf8("Button")).append(" ");
+        temp.append(tr("Button")).append(" ");
         temp.append(getDirectionName());
     }
-
     return temp;
 }
 
-
 QString JoyControlStickButton::getXmlName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::JoyControlStickButton::xmlName;
+    return this->xmlName;
 }
 
 /**
@@ -144,8 +120,6 @@ QString JoyControlStickButton::getXmlName()
  */
 double JoyControlStickButton::getDistanceFromDeadZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return stick->calculateDirectionalDistance();
 }
 
@@ -155,31 +129,24 @@ double JoyControlStickButton::getDistanceFromDeadZone()
  */
 double JoyControlStickButton::getMouseDistanceFromDeadZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return stick->calculateMouseDirectionalDistance(this);
 }
 
-
-void JoyControlStickButton::setChangeSetCondition(SetChangeCondition condition, bool passive, bool updateActiveString)
+void JoyControlStickButton::setChangeSetCondition(SetChangeCondition condition, bool passive)
 {
-    Q_UNUSED(updateActiveString);
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     SetChangeCondition oldCondition = setSelectionCondition;
 
-    if ((condition != setSelectionCondition) && !passive)
+    if (condition != setSelectionCondition && !passive)
     {
-        if ((condition == SetChangeWhileHeld) || (condition == SetChangeTwoWay))
+        if (condition == SetChangeWhileHeld || condition == SetChangeTwoWay)
         {
             // Set new condition
-            emit setAssignmentChanged(m_index, this->stick->getIndex(), setSelection, condition);
+            emit setAssignmentChanged(index, this->stick->getIndex(), setSelection, condition);
         }
-        else if ((setSelectionCondition == SetChangeWhileHeld) || (setSelectionCondition == SetChangeTwoWay))
+        else if (setSelectionCondition == SetChangeWhileHeld || setSelectionCondition == SetChangeTwoWay)
         {
             // Remove old condition
-            emit setAssignmentChanged(m_index, this->stick->getIndex(), setSelection, SetChangeDisabled);
+            emit setAssignmentChanged(index, this->stick->getIndex(), setSelection, SetChangeDisabled);
         }
 
         setSelectionCondition = condition;
@@ -201,20 +168,19 @@ void JoyControlStickButton::setChangeSetCondition(SetChangeCondition condition, 
     }
 }
 
-
-int JoyControlStickButton::getRealJoyNumber() const
+int JoyControlStickButton::getRealJoyNumber()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_index;
+    return index;
 }
 
-
-JoyStickDirectionsType::JoyStickDirections JoyControlStickButton::getDirection() const
+JoyControlStick* JoyControlStickButton::getStick()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    return stick;
+}
 
-    return static_cast<JoyStickDirectionsType::JoyStickDirections>(m_index);
+JoyStickDirectionsType::JoyStickDirections JoyControlStickButton::getDirection()
+{
+    return static_cast<JoyStickDirectionsType::JoyStickDirections>(index);
 }
 
 /**
@@ -223,8 +189,6 @@ JoyStickDirectionsType::JoyStickDirections JoyControlStickButton::getDirection()
  */
 void JoyControlStickButton::setTurboMode(TurboMode mode)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (isPartRealAxis())
     {
         currentTurboMode = mode;
@@ -239,25 +203,17 @@ void JoyControlStickButton::setTurboMode(TurboMode mode)
  */
 bool JoyControlStickButton::isPartRealAxis()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return true;
 }
 
-
 double JoyControlStickButton::getLastAccelerationDistance()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     double temp = stick->calculateLastAccelerationButtonDistance(this);
     return temp;
 }
 
-
 double JoyControlStickButton::getAccelerationDistance()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     double temp = stick->calculateAccelerationDistance(this);
     return temp;
 }
@@ -269,80 +225,60 @@ double JoyControlStickButton::getAccelerationDistance()
  */
 QString JoyControlStickButton::getActiveZoneSummary()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QList<JoyButtonSlot*> tempList;
+    JoyControlStickModifierButton *tempButton = stick->getModifierButton();
+    /*if (tempButton && tempButton->getButtonState() &&
+          tempButton->hasActiveSlots() && getButtonState())
+    {
+        QList<JoyButtonSlot*> activeModifierSlots = tempButton->getActiveZoneList();
+        tempList.append(activeModifierSlots);
+    }
+    */
 
     tempList.append(getActiveZoneList());
     QString temp = buildActiveZoneSummary(tempList);
     return temp;
 }
 
-
 QString JoyControlStickButton::getCalculatedActiveZoneSummary()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     JoyControlStickModifierButton *tempButton = stick->getModifierButton();
-    QString temp = QString();
-    QStringList stringlist = QStringList();
+    QString temp;
+    QStringList stringlist;
 
-    if ((tempButton != nullptr) && tempButton->getButtonState() &&
+    if (tempButton && tempButton->getButtonState() &&
         tempButton->hasActiveSlots() && getButtonState())
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "Calculated Active Zone Summary: " << tempButton->getCalculatedActiveZoneSummary();
-        #endif
-
         stringlist.append(tempButton->getCalculatedActiveZoneSummary());
     }
 
     stringlist.append(JoyButton::getCalculatedActiveZoneSummary());
     temp = stringlist.join(", ");
 
-    #ifndef QT_DEBUG_NO_OUTPUT
-    qDebug() << "Returned joined zone: " << temp;
-    #endif
-
     return temp;
 }
 
-
 double JoyControlStickButton::getLastMouseDistanceFromDeadZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return stick->calculateLastMouseDirectionalDistance(this);
 }
 
-
 double JoyControlStickButton::getCurrentSpringDeadCircle()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     double result = (springDeadCircleMultiplier * 0.01);
-
-    if ((m_index == static_cast<int>(JoyControlStick::StickLeft)) || (m_index == static_cast<int>(JoyControlStick::StickRight)))
+    if (index == JoyControlStick::StickLeft || index == JoyControlStick::StickRight)
     {
         result = stick->getSpringDeadCircleX() * (springDeadCircleMultiplier * 0.01);
     }
-    else if ((m_index == static_cast<int>(JoyControlStick::StickUp)) || (m_index == static_cast<int>(JoyControlStick::StickDown)))
+    else if (index == JoyControlStick::StickUp || index == JoyControlStick::StickDown)
     {
         result = stick->getSpringDeadCircleY() * (springDeadCircleMultiplier * 0.01);
     }
-    else if ((m_index == static_cast<int>(JoyControlStick::StickRightUp)) || (m_index == static_cast<int>(JoyControlStick::StickRightDown)) ||
-             (m_index == static_cast<int>(JoyControlStick::StickLeftDown)) || (m_index == static_cast<int>(JoyControlStick::StickLeftUp)))
+    else if (index == JoyControlStick::StickRightUp || index == JoyControlStick::StickRightDown ||
+             index == JoyControlStick::StickLeftDown || index == JoyControlStick::StickLeftUp)
     {
         result = 0.0;
     }
 
     return result;
-}
-
-
-JoyControlStick* JoyControlStickButton::getStick() const {
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return stick;
 }

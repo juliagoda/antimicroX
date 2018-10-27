@@ -15,16 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "gamecontrollerexample.h"
-
-#include "messagehandler.h"
-
 #include <QPainter>
 #include <QPixmap>
 #include <QTransform>
-#include <QPaintEvent>
-#include <QDebug>
 
+#include "gamecontrollerexample.h"
 
 struct ButtonImagePlacement {
     int x;
@@ -62,8 +57,6 @@ static ButtonImagePlacement buttonLocations[] = {
 GameControllerExample::GameControllerExample(QWidget *parent) :
     QWidget(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     controllerimage = QImage(":/images/controllermap.png");
     buttonimage = QImage(":/images/button.png");
     axisimage = QImage(":/images/axis.png");
@@ -73,13 +66,11 @@ GameControllerExample::GameControllerExample(QWidget *parent) :
     rotatedaxisimage = axisimage.transformed(myTransform);
     currentIndex = 0;
 
-    connect(this, &GameControllerExample::indexUpdated, this, [=]() { update(); });
+    connect(this, SIGNAL(indexUpdated(int)), this, SLOT(update()));
 }
 
 void GameControllerExample::paintEvent(QPaintEvent *event)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(event);
 
     QPainter paint(this);
@@ -87,22 +78,17 @@ void GameControllerExample::paintEvent(QPaintEvent *event)
     ButtonImagePlacement current = buttonLocations[currentIndex];
 
     paint.setOpacity(0.85);
-
-    switch(current.buttontype)
+    if (current.buttontype == Button)
     {
-
-    case Button:
         paint.drawImage(QRect(current.x, current.y, buttonimage.width(), buttonimage.height()), buttonimage);
-        break;
-
-    case AxisX:
+    }
+    else if (current.buttontype == AxisX)
+    {
         paint.drawImage(QRect(current.x, current.y, axisimage.width(), axisimage.height()), axisimage);
-        break;
-
-    case AxisY:
+    }
+    else if (current.buttontype == AxisY)
+    {
         paint.drawImage(QRect(current.x, current.y, rotatedaxisimage.width(), rotatedaxisimage.height()), rotatedaxisimage);
-        break;
-
     }
 
     paint.setOpacity(1.0);
@@ -110,9 +96,7 @@ void GameControllerExample::paintEvent(QPaintEvent *event)
 
 void GameControllerExample::setActiveButton(int button)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (button <= MAXBUTTONINDEX)
+    if (button >= 0 && button <= MAXBUTTONINDEX)
     {
         currentIndex = button;
         emit indexUpdated(button);

@@ -18,54 +18,22 @@
 #ifndef STICKPUSHBUTTONGROUP_H
 #define STICKPUSHBUTTONGROUP_H
 
-#include "joycontrolstickdirectionstype.h"
-
 #include <QGridLayout>
 
-
-class JoyControlStick;
-class QWidget;
-class JoyControlStickButtonPushButton;
-class JoyControlStickPushButton;
+#include "joycontrolstick.h"
+#include "joycontrolstickpushbutton.h"
+#include "joycontrolstickbuttonpushbutton.h"
 
 class StickPushButtonGroup : public QGridLayout
 {
     Q_OBJECT
-
 public:
-    explicit StickPushButtonGroup(JoyControlStick *stick, bool displayNames = false, QWidget *parent = nullptr);
-    JoyControlStick *getStick() const;
-
-    bool ifDisplayNames() const;
-
-    JoyControlStickButtonPushButton *getUpButton() const;
-    JoyControlStickButtonPushButton *getDownButton() const;
-    JoyControlStickButtonPushButton *getLeftButton() const;
-    JoyControlStickButtonPushButton *getRightButton() const;
-
-    JoyControlStickButtonPushButton *getUpLeftButton() const;
-    JoyControlStickButtonPushButton *getUpRightButton() const;
-    JoyControlStickButtonPushButton *getDownLeftButton() const;
-    JoyControlStickButtonPushButton *getDownRightButton() const;
-
-    JoyControlStickPushButton *getStickWidget() const;
+    explicit StickPushButtonGroup(JoyControlStick *stick, bool displayNames = false, QWidget *parent = 0);
+    JoyControlStick *getStick();
 
 protected:
     void generateButtons();
 
-signals:
-    void buttonSlotChanged();
-
-public slots:
-    void changeButtonLayout();
-    void toggleNameDisplay();
-
-private slots:
-    void propogateSlotsChanged();
-    void openStickButtonDialog(JoyControlStickButtonPushButton* pushbutton);
-    void showStickDialog();
-
-private:
     JoyControlStick *stick;
     bool displayNames;
 
@@ -81,7 +49,17 @@ private:
 
     JoyControlStickPushButton *stickWidget;
 
-    JoyControlStickButtonPushButton * generateBtnToGrid(JoyControlStickButtonPushButton *pushbutton, JoyControlStick *stick, JoyStickDirectionsType::JoyStickDirections stickValue, int gridRow, int gridCol);
+signals:
+    void buttonSlotChanged();
+
+public slots:
+    void changeButtonLayout();
+    void toggleNameDisplay();
+
+private slots:
+    void propogateSlotsChanged();
+    void openStickButtonDialog();
+    void showStickDialog();
 };
 
 #endif // STICKPUSHBUTTONGROUP_H

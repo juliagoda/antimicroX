@@ -18,16 +18,6 @@
 #ifndef JOYBUTTON_H
 #define JOYBUTTON_H
 
-
-#include "joybuttonslot.h"
-#include "globalvariables.h"
-#include "springmousemoveinfo.h"
-#include "joybuttonmousehelper.h"
-
-#ifdef Q_OS_WIN
-  #include "joykeyrepeathelper.h"
-#endif
-
 #include <QObject>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -37,17 +27,23 @@
 #include <QHash>
 #include <QQueue>
 #include <QReadWriteLock>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
+
+#include "joybuttonslot.h"
+#include "springmousemoveinfo.h"
+#include "joybuttonmousehelper.h"
+
+#ifdef Q_OS_WIN
+  #include "joykeyrepeathelper.h"
+#endif
 
 class VDPad;
 class SetJoystick;
-class QXmlStreamReader;
-class QXmlStreamWriter;
-class QThread;
 
 class JoyButton : public QObject
 {
     Q_OBJECT
-
 public:
     explicit JoyButton(int index, int originset, SetJoystick *parentSet, QObject *parent=0);
     ~JoyButton();
@@ -63,240 +59,453 @@ public:
                                     EaseOutQuadAccelCurve, EaseOutCubicAccelCurve};
     enum TurboMode {NormalTurbo=0, GradientTurbo, PulseTurbo};
 
+    void joyEvent(bool pressed, bool ignoresets=false);
+    void queuePendingEvent(bool pressed, bool ignoresets=false);
+    void activatePendingEvent();
+    bool hasPendingEvent();
+    void clearPendingEvent();
+
+    int getJoyNumber();
+    virtual int getRealJoyNumber();
+    void setJoyNumber(int index);
+
+    bool getToggleState();
+    int getTurboInterval();
+    bool isUsingTurbo();
+    void setCustomName(QString name);
+    QString getCustomName();
+
+    QList<JoyButtonSlot*> *getAssignedSlots();
+
+    virtual void readConfig(QXmlStreamReader *xml);
+    virtual void writeConfig(QXmlStreamWriter *xml);
+
+    virtual QString getPartialName(bool forceFullFormat=false, bool displayNames=false);
+    virtual QString getSlotsSummary();
+    virtual QString getSlotsString();
+    virtual QList<JoyButtonSlot*> getActiveZoneList();
+    virtual QString getActiveZoneSummary();
+    virtual QString getCalculatedActiveZoneSummary();
+    virtual QString getName(bool forceFullFormat=false, bool displayNames=false);
+    virtual QString getXmlName();
+
+    int getMouseSpeedX();
+    int getMouseSpeedY();
+
+    int getWheelSpeedX();
+    int getWheelSpeedY();
+
+    void setChangeSetSelection(int index, bool updateActiveString=true);
+    int getSetSelection();
+
+    virtual void setChangeSetCondition(SetChangeCondition condition,
+                                       bool passive=false, bool updateActiveString=true);
+    SetChangeCondition getChangeSetCondition();
+
+    bool getButtonState();
+    int getOriginSet();
+
+    bool containsSequence();
+    bool containsDistanceSlots();
+    bool containsReleaseSlots();
+
+    virtual double getDistanceFromDeadZone();
+    virtual double getMouseDistanceFromDeadZone();
+    virtual double getLastMouseDistanceFromDeadZone();
+
+    // Don't use direct assignment but copying from a current button.
+    virtual void copyLastMouseDistanceFromDeadZone(JoyButton *srcButton);
+    virtual void copyLastAccelerationDistance(JoyButton *srcButton);
+
+    void copyExtraAccelerationState(JoyButton *srcButton);
+    void setUpdateInitAccel(bool state);
+
+    virtual void setVDPad(VDPad *vdpad);
+    void removeVDPad();
+    bool isPartVDPad();
+    VDPad* getVDPad();
+
+    virtual bool isDefault();
+    void setIgnoreEventState(bool ignore);
+    bool getIgnoreEventState();
+
+    void setMouseMode(JoyMouseMovementMode mousemode);
+    JoyMouseMovementMode getMouseMode();
+
+    void setMouseCurve(JoyMouseCurve selectedCurve);
+    JoyMouseCurve getMouseCurve();
+
+    int getSpringWidth();
+    int getSpringHeight();
+
+    double getSensitivity();
+
+    bool getWhileHeldStatus();
+    void setWhileHeldStatus(bool status);
+
+    QString getActionName();
+    QString getButtonName();
+
+    virtual void setDefaultButtonName(QString tempname);
+    virtual QString getDefaultButtonName();
+
+    SetJoystick* getParentSet();
+
+    void setCycleResetTime(unsigned int interval);
+    unsigned int getCycleResetTime();
+
+    void setCycleResetStatus(bool enabled);
+    bool isCycleResetActive();
+
+    bool isRelativeSpring();
+    void copyAssignments(JoyButton *destButton);
+
+    virtual void setTurboMode(TurboMode mode);
+    TurboMode getTurboMode();
+    virtual bool isPartRealAxis();
+    virtual bool isModifierButton();
+
+    bool hasActiveSlots();
+
+    static int calculateFinalMouseSpeed(JoyMouseCurve curve, int value);
+    double getEasingDuration();
+
+    static void moveMouseCursor(int &movedX, int &movedY, int &movedElapsed);
+    static void moveSpringMouse(int &movedX, int &movedY, bool &hasMoved);
+
+    static JoyButtonMouseHelper* getMouseHelper();
+    static QList<JoyButton*>* getPendingMouseButtons();
+    static bool hasCursorEvents();
+    static bool hasSpringEvents();
+
+    static double getWeightModifier();
+    static void setWeightModifier(double modifier);
+
+    static int getMouseHistorySize();
+    static void setMouseHistorySize(int size);
+
+    static int getMouseRefreshRate();
+    static void setMouseRefreshRate(int refresh);
+
+    static int getSpringModeScreen();
+    static void setSpringModeScreen(int screen);
+
+    static void resetActiveButtonMouseDistances();
+    void resetAccelerationDistances();
+
+    void setExtraAccelerationStatus(bool status);
+    void setExtraAccelerationMultiplier(double value);
+
+    bool isExtraAccelerationEnabled();
+    double getExtraAccelerationMultiplier();
+
+    virtual void initializeDistanceValues();
+
+    void setMinAccelThreshold(double value);
+    double getMinAccelThreshold();
+
+    void setMaxAccelThreshold(double value);
+    double getMaxAccelThreshold();
+
+    void setStartAccelMultiplier(double value);
+    double getStartAccelMultiplier();
+
+    void setAccelExtraDuration(double value);
+    double getAccelExtraDuration();
+
+    void setExtraAccelerationCurve(JoyExtraAccelerationCurve curve);
+    JoyExtraAccelerationCurve getExtraAccelerationCurve();
+
+    virtual double getAccelerationDistance();
+    virtual double getLastAccelerationDistance();
+
+    void setSpringDeadCircleMultiplier(int value);
+    int getSpringDeadCircleMultiplier();
+
+    static int getGamepadRefreshRate();
+    static void setGamepadRefreshRate(int refresh);
+
+    static void restartLastMouseTime();
+
+    static void setStaticMouseThread(QThread *thread);
+    static void indirectStaticMouseThread(QThread *thread);
+
+    static bool shouldInvokeMouseEvents();
+    static void invokeMouseEvents();
+
+    static const QString xmlName;
+
+    // Define default values for many properties.
+    static const int ENABLEDTURBODEFAULT;
+    static const double DEFAULTMOUSESPEEDMOD;
+    static const unsigned int DEFAULTKEYREPEATDELAY;
+    static const unsigned int DEFAULTKEYREPEATRATE;
+    static const JoyMouseCurve DEFAULTMOUSECURVE;
+    static const bool DEFAULTTOGGLE;
+    static const int DEFAULTTURBOINTERVAL;
+    static const bool DEFAULTUSETURBO;
+    static const int DEFAULTMOUSESPEEDX;
+    static const int DEFAULTMOUSESPEEDY;
+    static const int DEFAULTSETSELECTION;
+    static const SetChangeCondition DEFAULTSETCONDITION;
+    static const JoyMouseMovementMode DEFAULTMOUSEMODE;
+    static const int DEFAULTSPRINGWIDTH;
+    static const int DEFAULTSPRINGHEIGHT;
+    static const double DEFAULTSENSITIVITY;
+    static const int DEFAULTWHEELX;
+    static const int DEFAULTWHEELY;
+    static const bool DEFAULTCYCLERESETACTIVE;
+    static const int DEFAULTCYCLERESET;
+    static const bool DEFAULTRELATIVESPRING;
+    static const TurboMode DEFAULTTURBOMODE;
+    static const double DEFAULTEASINGDURATION;
+    static const double MINIMUMEASINGDURATION;
+    static const double MAXIMUMEASINGDURATION;
+
+    static const int DEFAULTMOUSEHISTORYSIZE;
+    static const double DEFAULTWEIGHTMODIFIER;
+
+    static const int MAXIMUMMOUSEHISTORYSIZE;
+    static const double MAXIMUMWEIGHTMODIFIER;
+
+    static const int MAXIMUMMOUSEREFRESHRATE;
+    static const int DEFAULTIDLEMOUSEREFRESHRATE;
+    static int IDLEMOUSEREFRESHRATE;
+
+    static const unsigned int MINCYCLERESETTIME;
+    static const unsigned int MAXCYCLERESETTIME;
+
+    static const double DEFAULTEXTRACCELVALUE;
+    static const double DEFAULTMINACCELTHRESHOLD;
+    static const double DEFAULTMAXACCELTHRESHOLD;
+    static const double DEFAULTSTARTACCELMULTIPLIER;
+    static const double DEFAULTACCELEASINGDURATION;
+    static const JoyExtraAccelerationCurve DEFAULTEXTRAACCELCURVE;
+
+    static const int DEFAULTSPRINGRELEASERADIUS;
+
+    static QList<double> mouseHistoryX;
+    static QList<double> mouseHistoryY;
+
+    static double cursorRemainderX;
+    static double cursorRemainderY;
+
+protected:
+    double getTotalSlotDistance(JoyButtonSlot *slot);
+    bool distanceEvent();
+    void clearAssignedSlots(bool signalEmit=true);
+    void releaseSlotEvent();
+    void findReleaseEventEnd();
+    void findReleaseEventIterEnd(QListIterator<JoyButtonSlot*> *tempiter);
+    void findHoldEventEnd();
+    bool checkForDelaySequence();
+    void checkForPressedSetChange();
+    bool insertAssignedSlot(JoyButtonSlot *newSlot, bool updateActiveString=true);
+    unsigned int getPreferredKeyPressTime();
+    void checkTurboCondition(JoyButtonSlot *slot);
+    static bool hasFutureSpringEvents();
+    virtual double getCurrentSpringDeadCircle();
+    void vdpadPassEvent(bool pressed, bool ignoresets=false);
+
+    QString buildActiveZoneSummary(QList<JoyButtonSlot*> &tempList);
+    void localBuildActiveZoneSummaryString();
+
+    virtual bool readButtonConfig(QXmlStreamReader *xml);
+
     typedef struct _mouseCursorInfo
     {
         JoyButtonSlot *slot;
         double code;
     } mouseCursorInfo;
 
-    void joyEvent(bool pressed, bool ignoresets=false);
-    void queuePendingEvent(bool pressed, bool ignoresets=false);
-    void activatePendingEvent();
-    void setJoyNumber(int index);
-    void clearPendingEvent();
-    void setCustomName(QString name);
-    void copyExtraAccelerationState(JoyButton *srcButton);
-    void setUpdateInitAccel(bool state);
-    void removeVDPad();
-    void setIgnoreEventState(bool ignore);
-    void setMouseMode(JoyMouseMovementMode mousemode);
-    void setMouseCurve(JoyMouseCurve selectedCurve);
-    void setWhileHeldStatus(bool status);
-    void setCycleResetStatus(bool enabled);
-    void copyAssignments(JoyButton *destButton);
-    void resetAccelerationDistances();
-    void setExtraAccelerationStatus(bool status);
-    void setExtraAccelerationMultiplier(double value);
-    void setCycleResetTime(int interval); // .., unsigned
-    void setMinAccelThreshold(double value);
-    void setExtraAccelerationCurve(JoyExtraAccelerationCurve curve);
-    void setSpringDeadCircleMultiplier(int value);
-    void setAccelExtraDuration(double value);
-    void setStartAccelMultiplier(double value);
-    void setMaxAccelThreshold(double value);
-    void setChangeSetSelection(int index, bool updateActiveString=true);
+    // Used to denote whether the actual joypad button is pressed
+    bool isButtonPressed;
+    // Used to denote whether the virtual key is pressed
+    bool isKeyPressed;
+    bool toggle;
+    bool quitEvent;
+    // Used to denote the SDL index of the actual joypad button
+    int index;
+    int turboInterval;
 
-    bool hasPendingEvent();
-    bool getToggleState();
-    bool isUsingTurbo();
-    bool getButtonState();
-    bool containsSequence();
-    bool containsDistanceSlots();
-    bool containsReleaseSlots();
-    bool getIgnoreEventState();
-    bool getWhileHeldStatus();
-    bool hasActiveSlots();
-    bool isCycleResetActive();
-    bool isRelativeSpring();
-    bool isPartVDPad();
-    bool isExtraAccelerationEnabled();
+    QTimer turboTimer;
+    QTimer pauseTimer;
+    QTimer holdTimer;
+    QTimer pauseWaitTimer;
+    QTimer createDeskTimer;
+    QTimer releaseDeskTimer;
+    QTimer mouseWheelVerticalEventTimer;
+    QTimer mouseWheelHorizontalEventTimer;
+    QTimer setChangeTimer;
+    QTimer keyPressTimer;
+    QTimer delayTimer;
+    QTimer slotSetChangeTimer;
+    static QTimer staticMouseEventTimer;
 
-    double getMinAccelThreshold();
-    double getMaxAccelThreshold();
-    double getStartAccelMultiplier();
-    double getAccelExtraDuration();
-    double getExtraAccelerationMultiplier();
-    double getSensitivity();
-    double getEasingDuration();
+    bool isDown;
+    bool toggleActiveState;
+    bool useTurbo;
+    QList<JoyButtonSlot*> assignments;
+    QList<JoyButtonSlot*> activeSlots;
+    QString customName;
 
-    int getJoyNumber();
-    int getTurboInterval();
-    int getMouseSpeedX();
-    int getMouseSpeedY();
-    int getWheelSpeedX();
-    int getWheelSpeedY();
-    int getSetSelection();
-    int getOriginSet();
-    int getSpringWidth();
-    int getSpringHeight();
-    int getCycleResetTime(); // unsigned
-    int getSpringDeadCircleMultiplier();
+    int mouseSpeedX;
+    int mouseSpeedY;
+    int wheelSpeedX;
+    int wheelSpeedY;
 
-    QString getCustomName();
-    QString getActionName();
-    QString getButtonName();
+    int setSelection;
+    SetChangeCondition setSelectionCondition;
+    int originset;
 
-    QList<JoyButtonSlot*>* getAssignedSlots();
-    QList<JoyButtonSlot*> const& getActiveSlots();
+    QListIterator<JoyButtonSlot*> *slotiter;
+    JoyButtonSlot *currentPause;
+    JoyButtonSlot *currentHold;
+    JoyButtonSlot *currentCycle;
+    JoyButtonSlot *previousCycle;
+    JoyButtonSlot *currentDistance;
+    JoyButtonSlot *currentMouseEvent;
+    JoyButtonSlot *currentRelease;
+    JoyButtonSlot *currentWheelVerticalEvent;
+    JoyButtonSlot *currentWheelHorizontalEvent;
+    JoyButtonSlot *currentKeyPress;
+    JoyButtonSlot *currentDelay;
+    JoyButtonSlot *currentSetChangeSlot;
 
-    virtual bool isPartRealAxis();
-    virtual bool isModifierButton();
-    virtual bool isDefault();
+    bool ignoresets;
+    QTime buttonHold;
+    QTime pauseHold;
+    QTime inpauseHold;
+    QTime buttonHeldRelease;
+    QTime keyPressHold;
+    QTime buttonDelay;
+    QTime turboHold;
+    QTime wheelVerticalTime;
+    QTime wheelHorizontalTime;
+    //static QElapsedTimer lastMouseTime;
+    static QTime testOldMouseTime;
 
-    virtual int getRealJoyNumber() const;
+    QQueue<bool> ignoreSetQueue;
+    QQueue<bool> isButtonPressedQueue;
 
-    virtual double getDistanceFromDeadZone();
-    virtual double getMouseDistanceFromDeadZone();
-    virtual double getLastMouseDistanceFromDeadZone();
-    virtual double getAccelerationDistance();
-    virtual double getLastAccelerationDistance();
+    QQueue<JoyButtonSlot*> mouseEventQueue;
+    QQueue<JoyButtonSlot*> mouseWheelVerticalEventQueue;
+    QQueue<JoyButtonSlot*> mouseWheelHorizontalEventQueue;
 
-    virtual void initializeDistanceValues();
-    virtual void setTurboMode(TurboMode mode);
-    virtual void setDefaultButtonName(QString tempname);
-    virtual void copyLastMouseDistanceFromDeadZone(JoyButton *srcButton); // Don't use direct assignment but copying from a current button.
-    virtual void copyLastAccelerationDistance(JoyButton *srcButton);
-    virtual void setVDPad(VDPad *vdpad);
-    virtual void readConfig(QXmlStreamReader *xml);
-    virtual void writeConfig(QXmlStreamWriter *xml);
-    virtual void setChangeSetCondition(SetChangeCondition condition,
-                                       bool passive=false, bool updateActiveString=true);
+    int currentRawValue;
+    VDPad *vdpad;
+    bool ignoreEvents;
+    JoyMouseMovementMode mouseMode;
+    JoyMouseCurve mouseCurve;
 
-    virtual QString getPartialName(bool forceFullFormat=false, bool displayNames=false) const;
-    virtual QString getSlotsSummary();
-    virtual QString getSlotsString();
-    virtual QString getActiveZoneSummary();
-    virtual QString getCalculatedActiveZoneSummary();
-    virtual QString getName(bool forceFullFormat=false, bool displayNames=false);
-    virtual QString getXmlName();
-    virtual QString getDefaultButtonName();
+    int springWidth;
+    int springHeight;
+    double sensitivity;
+    bool smoothing;
+    bool whileHeldStatus;
+    double lastDistance;
+    double lastWheelVerticalDistance;
+    double lastWheelHorizontalDistance;
+    int tempTurboInterval;
 
-    virtual QList<JoyButtonSlot*> getActiveZoneList();
+    // Keep track of the previous mouse distance from the previous gamepad
+    // poll.
+    double lastMouseDistance;
 
+    // Keep track of the previous full distance from the previous gamepad
+    // poll.
+    double lastAccelerationDistance;
 
-    SetChangeCondition getChangeSetCondition();
+    // Multiplier and time used for acceleration easing.
+    double currentAccelMulti;
+    QTime accelExtraDurationTime;
+    double accelDuration;
+    double oldAccelMulti;
+    double accelTravel; // Track travel when accel started
 
-    VDPad* getVDPad();
+    // Should lastMouseDistance be updated. Set after mouse event.
+    bool updateLastMouseDistance;
 
-    JoyMouseMovementMode getMouseMode();
+    // Should startingMouseDistance be updated. Set after acceleration
+    // has finally been applied.
+    bool updateStartingMouseDistance;
 
-    JoyMouseCurve getMouseCurve();
+    double updateOldAccelMulti;
 
-    SetJoystick* getParentSet();
+    bool updateInitAccelValues;
 
-    TurboMode getTurboMode();
+    // Keep track of the current mouse distance after a poll. Used
+    // to update lastMouseDistance later.
+    double currentMouseDistance;
 
-    static int calculateFinalMouseSpeed(JoyMouseCurve curve, int value, const float joyspeed);
+    // Keep track of the current mouse distance after a poll. Used
+    // to update lastMouseDistance later.
+    double currentAccelerationDistance;
 
-    static bool hasCursorEvents(QList<JoyButton::mouseCursorInfo>* cursorXSpeedsList, QList<JoyButton::mouseCursorInfo>* cursorYSpeedsList);
-    static bool hasSpringEvents(QList<PadderCommon::springModeInfo>* springXSpeedsList, QList<PadderCommon::springModeInfo>* springYSpeedsList);
-    static bool shouldInvokeMouseEvents(QList<JoyButton*>* pendingMouseButtons, QTimer* staticMouseEventTimer, QTime* testOldMouseTime);
+    // Take into account when mouse acceleration started
+    double startingAccelerationDistance;
 
-    static void setWeightModifier(double modifier, double maxWeightModifier, double& weightModifier);
-    static void moveMouseCursor(int &movedX, int &movedY, int &movedElapsed, QList<double>* mouseHistoryX, QList<double>* mouseHistoryY, QTime* testOldMouseTime, QTimer* staticMouseEventTimer, int mouseRefreshRate, int mouseHistorySize, QList<JoyButton::mouseCursorInfo>* cursorXSpeeds, QList<JoyButton::mouseCursorInfo>* cursorYSpeeds, double& cursorRemainderX, double& cursorRemainderY, double weightModifier, int idleMouseRefrRate, QList<JoyButton*>* pendingMouseButtonse);
-    static void moveSpringMouse(int &movedX, int &movedY, bool &hasMoved, int springModeScreen, QList<PadderCommon::springModeInfo>* springXSpeeds, QList<PadderCommon::springModeInfo>* springYSpeeds, QList<JoyButton*>* pendingMouseButtons, int mouseRefreshRate, int idleMouseRefrRate, QTimer* staticMouseEventTimer);
-    static void setMouseHistorySize(int size, int maxMouseHistSize, int& mouseHistSize, QList<double>* mouseHistoryX, QList<double>* mouseHistoryY);
-    static void setMouseRefreshRate(int refresh, int& mouseRefreshRate, int idleMouseRefrRate, JoyButtonMouseHelper* mouseHelper, QList<double>* mouseHistoryX, QList<double>* mouseHistoryY, QTime* testOldMouseTime, QTimer* staticMouseEventTimer);
-    static void setSpringModeScreen(int screen, int& springModeScreen);
-    static void resetActiveButtonMouseDistances(JoyButtonMouseHelper* mouseHelper);
-    static void setGamepadRefreshRate(int refresh, int& gamepadRefreshRate, JoyButtonMouseHelper* mouseHelper);
-    static void restartLastMouseTime(QTime* testOldMouseTime);
-    static void setStaticMouseThread(QThread *thread, QTimer* staticMouseEventTimer, QTime* testOldMouseTime, int idleMouseRefrRate, JoyButtonMouseHelper* mouseHelper);
-    static void indirectStaticMouseThread(QThread *thread, QTimer* staticMouseEventTimer, JoyButtonMouseHelper* mouseHelper);
-    static void invokeMouseEvents(JoyButtonMouseHelper* mouseHelper);
+    double minMouseDistanceAccelThreshold;
+    double maxMouseDistanceAccelThreshold;
+    double startAccelMultiplier;
 
-    static JoyButtonMouseHelper* getMouseHelper();
-    static QList<JoyButton*>* getPendingMouseButtons();
-    static QList<JoyButton::mouseCursorInfo>* getCursorXSpeeds();
-    static QList<JoyButton::mouseCursorInfo>* getCursorYSpeeds();
-    static QList<PadderCommon::springModeInfo>* getSpringXSpeeds();
-    static QList<PadderCommon::springModeInfo>* getSpringYSpeeds();
-    static QTimer* getStaticMouseEventTimer();
-    static QTime* getTestOldMouseTime();
+    JoyExtraAccelerationCurve extraAccelCurve;
 
-    JoyExtraAccelerationCurve getExtraAccelerationCurve();
+    QString actionName;
+    QString buttonName; // User specified button name
+    QString defaultButtonName; // Name used by the system
 
-    static const JoyMouseCurve DEFAULTMOUSECURVE;
-    static const SetChangeCondition DEFAULTSETCONDITION;
-    static const JoyMouseMovementMode DEFAULTMOUSEMODE;
-    static const TurboMode DEFAULTTURBOMODE;
-    static const JoyExtraAccelerationCurve DEFAULTEXTRAACCELCURVE;
+    SetJoystick *parentSet; // Pointer to set that button is assigned to.
 
+    bool cycleResetActive;
+    unsigned int cycleResetInterval;
+    QTime cycleResetHold;
 
-protected:
-    int getPreferredKeyPressTime(); // unsigned
-
-    double getTotalSlotDistance(JoyButtonSlot *slot);
-
-    bool distanceEvent();
-    bool checkForDelaySequence();
-    bool insertAssignedSlot(JoyButtonSlot *newSlot, bool updateActiveString=true);
-    void clearAssignedSlots(bool signalEmit=true);
-    void releaseSlotEvent();
-    void checkForPressedSetChange();
-    void checkTurboCondition(JoyButtonSlot *slot);
-    void vdpadPassEvent(bool pressed, bool ignoresets=false);
-    void localBuildActiveZoneSummaryString();
-
-    static bool hasFutureSpringEvents(QList<JoyButton*>* pendingMouseButtons);
-
-    virtual double getCurrentSpringDeadCircle();
-
-    virtual bool readButtonConfig(QXmlStreamReader *xml);
-
+    bool relativeSpring;
     TurboMode currentTurboMode;
 
-    QString buildActiveZoneSummary(QList<JoyButtonSlot*> &tempList);
+    double easingDuration;
 
+    bool extraAccelerationEnabled;
+    double extraAccelerationMultiplier;
+
+    int springDeadCircleMultiplier;
+
+    bool pendingPress;
+    bool pendingEvent;
+    bool pendingIgnoreSets;
+
+    QReadWriteLock activeZoneLock;
+    QReadWriteLock assignmentsLock;
+    QReadWriteLock activeZoneStringLock;
+
+    QString activeZoneString;
+    QTimer activeZoneTimer;
+
+    static double mouseSpeedModifier;
     static QList<JoyButtonSlot*> mouseSpeedModList;
+
     static QList<mouseCursorInfo> cursorXSpeeds;
     static QList<mouseCursorInfo> cursorYSpeeds;
+
     static QList<PadderCommon::springModeInfo> springXSpeeds;
     static QList<PadderCommon::springModeInfo> springYSpeeds;
+
     static QList<JoyButton*> pendingMouseButtons;
 
+    static QHash<unsigned int, int> activeKeys;
+    static QHash<unsigned int, int> activeMouseButtons;
 #ifdef Q_OS_WIN
     static JoyKeyRepeatHelper repeatHelper;
 #endif
 
     static JoyButtonSlot *lastActiveKey;
     static JoyButtonMouseHelper mouseHelper;
-
-    int m_index; // Used to denote the SDL index of the actual joypad button
-    int turboInterval;
-    int wheelSpeedX;
-    int wheelSpeedY;
-    int setSelection;
-    int tempTurboInterval;
-    int springDeadCircleMultiplier;
-
-    bool isButtonPressed; // Used to denote whether the actual joypad button is pressed
-    bool isKeyPressed; // Used to denote whether the virtual key is pressed
-
-    double lastDistance;
-    double lastWheelVerticalDistance;
-    double lastWheelHorizontalDistance;
-
-    QTimer turboTimer;
-    QTimer mouseWheelVerticalEventTimer;
-    QTimer mouseWheelHorizontalEventTimer;
-
-    QTime wheelVerticalTime;
-    QTime wheelHorizontalTime;
-    QTime turboHold;
-
-    SetJoystick *m_parentSet; // Pointer to set that button is assigned to.
-    SetChangeCondition setSelectionCondition;
-    JoyButtonSlot *currentWheelVerticalEvent;
-    JoyButtonSlot *currentWheelHorizontalEvent;
-
-    QQueue<bool> ignoreSetQueue;
-    QQueue<bool> isButtonPressedQueue;
-    QQueue<JoyButtonSlot*> mouseWheelVerticalEventQueue;
-    QQueue<JoyButtonSlot*> mouseWheelHorizontalEventQueue;
-
-    QString buttonName; // User specified button name
-    QString defaultButtonName; // Name used by the system
+    static double weightModifier;
+    static int mouseHistorySize;
+    static int mouseRefreshRate;
+    static int springModeScreen;
+    static int gamepadRefreshRate;
 
 signals:
     void clicked (int index);
@@ -321,47 +530,54 @@ public slots:
     void setUseTurbo(bool useTurbo);
     void setMouseSpeedX(int speed);
     void setMouseSpeedY(int speed);
-    void setWheelSpeed(int speed, QChar ax);
+
+    void setWheelSpeedX(int speed);
+    void setWheelSpeedY(int speed);
+
     void setSpringWidth(int value);
     void setSpringHeight(int value);
+
     void setSensitivity(double value);
     void setSpringRelativeStatus(bool value);
+
     void setActionName(QString tempName);
     void setButtonName(QString tempName);
+
     void setEasingDuration(double value);
-    void establishPropertyUpdatedConnections();
-    void disconnectPropertyUpdatedConnections();
-    void removeAssignedSlot(int index);
 
     virtual void reset();
     virtual void reset(int index);
     virtual void resetProperties();
+
     virtual void clearSlotsEventReset(bool clearSignalEmit=true);
     virtual void eventReset();
-    virtual void mouseEvent();
 
-    static void establishMouseTimerConnections();
-
-    bool setAssignedSlot(int code, int alias, int index,
-                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard); // .., .., unsigned, .., ..
+    bool setAssignedSlot(int code, unsigned int alias, int index,
+                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard);
 
     bool setAssignedSlot(int code,
                          JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard);
 
-    bool setAssignedSlot(int code, int alias,
-                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard); // .., .., unsigned, ..
+    bool setAssignedSlot(int code, unsigned int alias,
+                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard);
 
     bool setAssignedSlot(JoyButtonSlot *otherSlot, int index);
 
-    bool insertAssignedSlot(int code, int alias, int index,
-                            JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard); // .., .., unsigned, .., ..
+    bool insertAssignedSlot(int code, unsigned int alias, int index,
+                            JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard);
 
+    void removeAssignedSlot(int index);
+
+    static void establishMouseTimerConnections();
+    void establishPropertyUpdatedConnections();
+    void disconnectPropertyUpdatedConnections();
+
+    virtual void mouseEvent();
 
 protected slots:
     virtual void turboEvent();
     virtual void wheelEventVertical();
     virtual void wheelEventHorizontal();
-
     void createDeskEvent();
     void releaseDeskEvent(bool skipsetchange=false);
     void buildActiveZoneSummaryString();
@@ -373,232 +589,11 @@ private slots:
     void waitForReleaseDeskEvent();
     void holdEvent();
     void delayEvent();
+
     void pauseWaitEvent();
     void checkForSetChange();
     void keyPressEvent();
     void slotSetChange();
-
-private:
-
-    inline void updatePendingParams(bool isEvent, bool isPressed, bool areIgnoredSets)
-    {
-        pendingEvent = isEvent;
-        pendingPress = isPressed;
-        pendingIgnoreSets = areIgnoredSets;
-    }
-
-    inline void updateMouseParams(bool updatedLastDist, bool updatedStartDist, double oldAccelMultiVal)
-    {
-        updateLastMouseDistance = updatedLastDist;
-        updateStartingMouseDistance = updatedStartDist;
-        updateOldAccelMulti = oldAccelMultiVal;
-    }
-
-    inline void resetSlotsProp(bool currentChangedSlot = false)
-    {
-        currentCycle = nullptr;
-        previousCycle = nullptr;
-        currentPause = nullptr;
-        currentHold = nullptr;
-        m_currentDistance = nullptr;
-        currentRawValue = 0;
-        currentMouseEvent = nullptr;
-        currentRelease = nullptr;
-        currentWheelVerticalEvent = nullptr;
-        currentWheelHorizontalEvent = nullptr;
-        currentKeyPress = nullptr;
-        currentDelay = nullptr;
-        if (currentChangedSlot) currentSetChangeSlot = nullptr;
-
-        isKeyPressed = isButtonPressed = false;
-        quitEvent = true;
-    }
-
-    inline void stopTimers(bool restartedActiveZoneTimer, bool stoppedActiveZoneTimer, bool stoppedSlotSetTimer)
-    {
-        if (restartedActiveZoneTimer) activeZoneTimer.start();
-
-        turboTimer.stop();
-        pauseWaitTimer.stop();
-        createDeskTimer.stop();
-        releaseDeskTimer.stop();
-        holdTimer.stop();
-        mouseWheelVerticalEventTimer.stop();
-        mouseWheelHorizontalEventTimer.stop();
-        setChangeTimer.stop();
-        keyPressTimer.stop();
-        delayTimer.stop();
-        if (stoppedActiveZoneTimer) activeZoneTimer.stop();
-
-        #ifdef Q_OS_WIN
-            repeatHelper.getRepeatTimer()->stop();
-        #endif
-
-        if (stoppedSlotSetTimer) slotSetChangeTimer.stop();
-
-        if (slotiter != nullptr)
-       {
-           delete slotiter;
-           slotiter = nullptr;
-       }
-    }
-
-    inline void clearQueues()
-    {
-        isButtonPressedQueue.clear();
-        ignoreSetQueue.clear();
-        mouseEventQueue.clear();
-        mouseWheelVerticalEventQueue.clear();
-        mouseWheelHorizontalEventQueue.clear();
-    }
-
-    inline void restartAccelParams(bool updatedOldAccel, bool restartedAccelDurTimer, bool restartedRestParams)
-    {
-        lastAccelerationDistance = 0.0;
-        currentAccelMulti = 0.0;
-        currentAccelerationDistance = 0.0;
-        startingAccelerationDistance = 0.0;
-
-        if (updatedOldAccel) oldAccelMulti = updateOldAccelMulti = 0.0;
-        else oldAccelMulti = 0.0;
-
-        accelTravel = 0.0;
-        if (restartedAccelDurTimer) accelExtraDurationTime.restart();
-
-        if (restartedRestParams)
-        {
-            updateInitAccelValues = true;
-            extraAccelerationEnabled = false;
-            extraAccelerationMultiplier = GlobalVariables::JoyButton::DEFAULTEXTRACCELVALUE;
-            minMouseDistanceAccelThreshold = GlobalVariables::JoyButton::DEFAULTMINACCELTHRESHOLD;
-            maxMouseDistanceAccelThreshold = GlobalVariables::JoyButton::DEFAULTMAXACCELTHRESHOLD;
-            startAccelMultiplier = GlobalVariables::JoyButton::DEFAULTSTARTACCELMULTIPLIER;
-            accelDuration = GlobalVariables::JoyButton::DEFAULTACCELEASINGDURATION;
-            extraAccelCurve = LinearAccelCurve;
-        }
-    }
-
-    inline void lockForWritedString(QString& param, QString value)
-    {
-        activeZoneStringLock.lockForWrite();
-        param = value;
-        activeZoneStringLock.unlock();
-    }
-
-    void resetAllProperties();
-    void resetPrivVars();
-    void restartAllForSetChange();
-    void startTimerOverrun(int slotCode, QTime* currSlotTime, QTimer* currSlotTimer, bool releasedDeskTimer = false);
-    void findJoySlotsEnd(QListIterator<JoyButtonSlot*> *slotiter);
-    void changeStatesQueue(bool currentReleased);
-    void countActiveSlots(int tempcode, int& references, JoyButtonSlot* slot, QHash<int, int>& activeSlotsHash, bool& changeRepeatState, bool activeSlotHashWindows = false);
-    void releaseMoveSlots(QList<JoyButton::mouseCursorInfo>& cursorSpeeds, JoyButtonSlot *slot, QList<int>& indexesToRemove);
-    void setSpringDeadCircle(double& springDeadCircle, int mouseDirection);
-    void checkSpringDeadCircle(int tempcode, double& springDeadCircle, int mouseSlot1, int mouseSlot2);
-    static void distanceForMovingAx(double& finalAx, mouseCursorInfo infoAx);
-    static void adjustAxForCursor(QList<double>* mouseHistoryList, double& adjustedAx, double& cursorRemainder, double weightModifier);
-    void setDistanceForSpring(JoyButtonMouseHelper& mouseHelper, double& mouseFirstAx, double& mouseSecondAx, double distanceFromDeadZone);
-    void changeTurboParams(bool _isKeyPressed, bool isButtonPressed);
-    void updateParamsAfterDistEvent();
-    void startSequenceOfPressActive(bool isTurbo, QString debugText);
-    QList<JoyButtonSlot*>& getAssignmentsLocal();
-    QList<JoyButtonSlot*>& getActiveSlotsLocal();
-    void updateMouseProperties(double newAxisValue, double newSpringDead, int newSpringWidth, int newSpringHeight, bool relatived, int modeScreen, QList<PadderCommon::springModeInfo>& springSpeeds, QChar axis, double newAxisValueY = 0,  double newSpringDeadY = 0);
-
-    bool m_toggle;
-    bool quitEvent;
-    bool isDown;
-    bool toggleActiveState;
-    bool m_useTurbo;
-    bool lastUnlessInList;
-    bool m_ignoresets;
-    bool ignoreEvents;
-    bool whileHeldStatus;
-    bool updateLastMouseDistance; // Should lastMouseDistance be updated. Set after mouse event.
-    bool updateStartingMouseDistance; // Should startingMouseDistance be updated. Set after acceleration has finally been applied.
-    bool relativeSpring;
-    bool pendingPress;
-    bool pendingEvent;
-    bool pendingIgnoreSets;
-    bool extraAccelerationEnabled;
-    bool cycleResetActive;
-    bool updateInitAccelValues;
-
-    int mouseSpeedX;
-    int mouseSpeedY;
-    int m_originset;
-    int springWidth;
-    int springHeight;
-    int currentRawValue;
-    int cycleResetInterval; // unsigned
-
-    double sensitivity;
-    double lastMouseDistance; // Keep track of the previous mouse distance from the previous gamepad poll.
-    double lastAccelerationDistance; // Keep track of the previous full distance from the previous gamepad poll
-    double currentAccelMulti; // Multiplier and time used for acceleration easing.
-    double accelDuration;
-    double oldAccelMulti;
-    double accelTravel; // Track travel when accel started
-    double updateOldAccelMulti;
-    double currentMouseDistance; // Keep track of the current mouse distance after a poll. Used to update lastMouseDistance later.
-    double currentAccelerationDistance; // Keep track of the current mouse distance after a poll. Used to update lastMouseDistance later.
-    double startingAccelerationDistance; // Take into account when mouse acceleration started
-    double minMouseDistanceAccelThreshold;
-    double maxMouseDistanceAccelThreshold;
-    double startAccelMultiplier;
-    double m_easingDuration;
-    double extraAccelerationMultiplier;
-
-    QTimer pauseTimer;
-    QTimer holdTimer;
-    QTimer pauseWaitTimer;
-    QTimer createDeskTimer;
-    QTimer releaseDeskTimer;
-    QTimer setChangeTimer;
-    QTimer keyPressTimer;
-    QTimer delayTimer;
-    QTimer slotSetChangeTimer;
-    QTimer activeZoneTimer;
-    static QTimer staticMouseEventTimer;
-
-    QString customName;
-    QString actionName;
-    QString activeZoneString;
-
-    QList<JoyButtonSlot*> assignments;
-    QList<JoyButtonSlot*> activeSlots;
-    QListIterator<JoyButtonSlot*> *slotiter;
-    QQueue<JoyButtonSlot*> mouseEventQueue;
-    JoyButtonSlot *currentPause;
-    JoyButtonSlot *currentHold;
-    JoyButtonSlot *currentCycle;
-    JoyButtonSlot *previousCycle;
-    JoyButtonSlot *m_currentDistance;
-    JoyButtonSlot *currentMouseEvent;
-    JoyButtonSlot *currentRelease;
-    JoyButtonSlot *currentKeyPress;
-    JoyButtonSlot *currentDelay;
-    JoyButtonSlot *currentSetChangeSlot;
-
-    QTime buttonHold;
-    QTime pauseHold;
-    QTime inpauseHold;
-    QTime buttonHeldRelease;
-    QTime keyPressHold;
-    QTime buttonDelay;
-    QTime accelExtraDurationTime;
-    QTime cycleResetHold;
-    static QTime testOldMouseTime;
-
-    VDPad *m_vdpad;
-    JoyMouseMovementMode mouseMode;
-    JoyMouseCurve mouseCurve;
-    JoyExtraAccelerationCurve extraAccelCurve;
-
-    QReadWriteLock activeZoneLock;
-    QReadWriteLock assignmentsLock;
-    QReadWriteLock activeZoneStringLock;
-
 };
 
 

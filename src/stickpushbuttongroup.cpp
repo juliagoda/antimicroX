@@ -15,83 +15,116 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stickpushbuttongroup.h"
+#include <QHash>
 
-#include "messagehandler.h"
+#include "stickpushbuttongroup.h"
 #include "buttoneditdialog.h"
 #include "joycontrolstickeditdialog.h"
-#include "joycontrolstick.h"
-#include "joybuttontypes/joycontrolstickbutton.h"
-#include "joycontrolstickpushbutton.h"
-#include "joycontrolstickbuttonpushbutton.h"
-#include "inputdevice.h"
-
-#include <QHash>
-#include <QWidget>
-#include <QDebug>
-
-
 
 StickPushButtonGroup::StickPushButtonGroup(JoyControlStick *stick, bool displayNames, QWidget *parent) :
     QGridLayout(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->stick = stick;
     this->displayNames = displayNames;
 
     generateButtons();
     changeButtonLayout();
 
-    connect(stick, &JoyControlStick::joyModeChanged, this, &StickPushButtonGroup::changeButtonLayout);
+    connect(stick, SIGNAL(joyModeChanged()), this, SLOT(changeButtonLayout()));
 }
 
 void StickPushButtonGroup::generateButtons()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    QHash<JoyControlStick::JoyStickDirections, JoyControlStickButton*> *stickButtons = stick->getButtons();
 
-    JoyControlStickButtonPushButton *pushbutton = nullptr;
+    JoyControlStickButton *button = 0;
+    JoyControlStickButtonPushButton *pushbutton = 0;
 
-    upLeftButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickLeftUp, 0, 0);
-    upButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickUp, 0, 1);
-    upRightButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickRightUp, 0, 2);
-    leftButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickLeft, 1, 0);
+    button = stickButtons->value(JoyControlStick::StickLeftUp);
+    upLeftButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = upLeftButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 0, 0);
+
+    button = stickButtons->value(JoyControlStick::StickUp);
+    upButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = upButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 0, 1);
+
+    button = stickButtons->value(JoyControlStick::StickRightUp);
+    upRightButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = upRightButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 0, 2);
+
+    button = stickButtons->value(JoyControlStick::StickLeft);
+    leftButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = leftButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 1, 0);
 
     stickWidget = new JoyControlStickPushButton(stick, displayNames, parentWidget());
     stickWidget->setIcon(QIcon::fromTheme(QString::fromUtf8("games-config-options")));
-    connect(stickWidget, &JoyControlStickPushButton::clicked, this, &StickPushButtonGroup::showStickDialog);
+    connect(stickWidget, SIGNAL(clicked()), this, SLOT(showStickDialog()));
 
     addWidget(stickWidget, 1, 1);
 
-    rightButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickRight, 1, 2);
-    downLeftButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickLeftDown, 2, 0);
-    downButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickDown, 2, 1);
-    downRightButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickRightDown, 2, 2);
-}
-
-JoyControlStickButtonPushButton* StickPushButtonGroup::generateBtnToGrid(JoyControlStickButtonPushButton *pushbutton, JoyControlStick *stick, JoyStickDirectionsType::JoyStickDirections stickValue, int gridRow, int gridCol)
-{
-    JoyControlStickButton* button = stick->getButtons()->value(stickValue);
-    pushbutton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
-
-    connect(pushbutton, &JoyControlStickButtonPushButton::clicked, this, [this, pushbutton] {
-        openStickButtonDialog(pushbutton);
-    });
-
+    button = stickButtons->value(JoyControlStick::StickRight);
+    rightButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = rightButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
     button->establishPropertyUpdatedConnections();
-    connect(button, &JoyControlStickButton::slotsChanged, this, &StickPushButtonGroup::propogateSlotsChanged);
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
 
-    addWidget(pushbutton, gridRow, gridCol);
-    return pushbutton;
+    addWidget(pushbutton, 1, 2);
+
+    button = stickButtons->value(JoyControlStick::StickLeftDown);
+    downLeftButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = downLeftButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 2, 0);
+
+    button = stickButtons->value(JoyControlStick::StickDown);
+    downButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = downButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 2, 1);
+
+    button = stickButtons->value(JoyControlStick::StickRightDown);
+    downRightButton = new JoyControlStickButtonPushButton(button, displayNames, parentWidget());
+    pushbutton = downRightButton;
+    connect(pushbutton, SIGNAL(clicked()), this, SLOT(openStickButtonDialog()));
+    button->establishPropertyUpdatedConnections();
+    connect(button, SIGNAL(slotsChanged()), this, SLOT(propogateSlotsChanged()));
+
+    addWidget(pushbutton, 2, 2);
 }
 
 void StickPushButtonGroup::changeButtonLayout()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((stick->getJoyMode() == JoyControlStick::StandardMode) ||
-        (stick->getJoyMode() == JoyControlStick::EightWayMode) ||
-        (stick->getJoyMode() == JoyControlStick::FourWayCardinal))
+    if (stick->getJoyMode() == JoyControlStick::StandardMode ||
+        stick->getJoyMode() == JoyControlStick::EightWayMode ||
+        stick->getJoyMode() == JoyControlStick::FourWayCardinal)
     {
         upButton->setVisible(true);
         downButton->setVisible(true);
@@ -106,8 +139,8 @@ void StickPushButtonGroup::changeButtonLayout()
         rightButton->setVisible(false);
     }
 
-    if ((stick->getJoyMode() == JoyControlStick::EightWayMode) ||
-        (stick->getJoyMode() == JoyControlStick::FourWayDiagonal))
+    if (stick->getJoyMode() == JoyControlStick::EightWayMode ||
+        stick->getJoyMode() == JoyControlStick::FourWayDiagonal)
     {
         upLeftButton->setVisible(true);
         upRightButton->setVisible(true);
@@ -125,38 +158,29 @@ void StickPushButtonGroup::changeButtonLayout()
 
 void StickPushButtonGroup::propogateSlotsChanged()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     emit buttonSlotChanged();
 }
 
-JoyControlStick* StickPushButtonGroup::getStick() const
+JoyControlStick* StickPushButtonGroup::getStick()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return stick;
 }
 
-void StickPushButtonGroup::openStickButtonDialog(JoyControlStickButtonPushButton* pushbutton)
+void StickPushButtonGroup::openStickButtonDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    ButtonEditDialog *dialog = new ButtonEditDialog(pushbutton->getButton(), stick->getParentSet()->getInputDevice(), parentWidget());
+    JoyControlStickButtonPushButton *pushbutton = static_cast<JoyControlStickButtonPushButton*>(sender());
+    ButtonEditDialog *dialog = new ButtonEditDialog(pushbutton->getButton(), parentWidget());
     dialog->show();
 }
 
 void StickPushButtonGroup::showStickDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     JoyControlStickEditDialog *dialog = new JoyControlStickEditDialog(stick, parentWidget());
     dialog->show();
 }
 
 void StickPushButtonGroup::toggleNameDisplay()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     displayNames = !displayNames;
 
     upButton->toggleNameDisplay();
@@ -170,54 +194,4 @@ void StickPushButtonGroup::toggleNameDisplay()
     downRightButton->toggleNameDisplay();
 
     stickWidget->toggleNameDisplay();
-}
-
-bool StickPushButtonGroup::ifDisplayNames() const {
-
-    return displayNames;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getUpButton() const {
-
-    return upButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getDownButton() const {
-
-    return downButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getLeftButton() const {
-
-    return leftButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getRightButton() const {
-
-    return rightButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getUpLeftButton() const {
-
-    return upLeftButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getUpRightButton() const {
-
-    return upRightButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getDownLeftButton() const {
-
-    return downLeftButton;
-}
-
-JoyControlStickButtonPushButton *StickPushButtonGroup::getDownRightButton() const {
-
-    return downRightButton;
-}
-
-JoyControlStickPushButton *StickPushButtonGroup::getStickWidget() const {
-
-    return stickWidget;
 }

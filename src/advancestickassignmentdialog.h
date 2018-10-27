@@ -20,12 +20,7 @@
 
 #include <QDialog>
 
-class Joystick;
-class JoyAxisButton;
-class JoyButton;
-class QComboBox;
-class QCheckBox;
-class JoyControlStick;
+#include "joystick.h"
 
 namespace Ui {
 class AdvanceStickAssignmentDialog;
@@ -36,26 +31,29 @@ class AdvanceStickAssignmentDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit AdvanceStickAssignmentDialog(Joystick *joystick, QWidget *parent = nullptr);
+    explicit AdvanceStickAssignmentDialog(Joystick *joystick, QWidget *parent = 0);
     ~AdvanceStickAssignmentDialog();
-
-    Joystick *getJoystick() const;
-       
+    
+protected:
+    Joystick *joystick;
 
 signals:
     void stickConfigurationChanged();
     void vdpadConfigurationChanged();
 
-private slots:
-    void refreshStickConfiguration(JoyControlStick *stick1, JoyControlStick *stick2);
-    void refreshVDPadsConfiguration();
+private:
+    Ui::AdvanceStickAssignmentDialog *ui;
 
-    void checkForAxisAssignmentStickOne(QWidget* comboBox);
-    void checkForAxisAssignmentStickTwo(QWidget* comboBox);
+private slots:
+    void refreshStickConfiguration();
+    void refreshVDPadConfiguration();
+
+    void checkForAxisAssignmentStickOne();
+    void checkForAxisAssignmentStickTwo();
 
     void changeStateStickOneWidgets(bool enabled);
     void changeStateStickTwoWidgets(bool enabled);
-    void changeStateVDPadWidgets(bool enabledVDPads);
+    void changeStateVDPadWidgets(bool enabled);
 
     void populateDPadComboBoxes();
 
@@ -70,30 +68,23 @@ private slots:
     void openQuickAssignDialogStick1();
     void openQuickAssignDialogStick2();
 
+    void quickAssignStick1Axis1();
+    void quickAssignStick1Axis2();
+
+    void quickAssignStick2Axis1();
+    void quickAssignStick2Axis2();
+
     void openAssignVDPadUp();
     void openAssignVDPadDown();
     void openAssignVDPadLeft();
     void openAssignVDPadRight();
 
-    void quickAssignVDPadUp(JoyAxisButton* joyaxisbtn);
-    void quickAssignVDPadUpBtn(JoyButton* joybtn);
-    void quickAssignVDPadDown(JoyAxisButton* axbtn);
-    void quickAssignVDPadDownJbtn(JoyButton* axbtn);
-    void quickAssignVDPadLeft(JoyAxisButton* joyaxisbtn);
-    void quickAssignVDPadLeftJbtn(JoyButton* joybtn);
-    void quickAssignVDPadRight(JoyAxisButton* joyaxisbtn);
-    void quickAssignVDPadRightJbtn(JoyButton* joybtn);
+    void quickAssignVDPadUp();
+    void quickAssignVDPadDown();
+    void quickAssignVDPadLeft();
+    void quickAssignVDPadRight();
 
     void reenableButtonEvents();
-
-private:
-    Ui::AdvanceStickAssignmentDialog *ui;
-
-    Joystick *joystick;
-
-    void checkForAxisAssignmentSticks(QWidget* comboBox, QComboBox* xAxisComboBox, QComboBox* yAxisComboBox, int controlStickNumber);
-    void refreshSticksForAxes(bool axesExist, int xAxisComboBoxIndex, int yAxisComboBoxIndex, QComboBox* xAxisComboBox, QComboBox* yAxisComboBox, QCheckBox* enabledSticksCheckbox, QPushButton* quickAssignBtn);
-    void refreshVDPadConf(JoyButton *vdpadButton, QComboBox* vpadComboBox);
 };
 
 #endif // ADVANCESTICKASSIGNMENTDIALOG_H

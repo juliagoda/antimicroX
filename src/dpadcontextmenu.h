@@ -18,37 +18,33 @@
 #ifndef DPADCONTEXTMENU_H
 #define DPADCONTEXTMENU_H
 
-#include "uihelpers/dpadcontextmenuhelper.h"
-
 #include <QMenu>
 
-class JoyDPad;
-class QWidget;
+#include "joydpad.h"
+
+#include "uihelpers/dpadcontextmenuhelper.h"
 
 class DPadContextMenu : public QMenu
 {
     Q_OBJECT
-
 public:
-    explicit DPadContextMenu(JoyDPad *dpad, QWidget *parent = nullptr);
+    explicit DPadContextMenu(JoyDPad *dpad, QWidget *parent = 0);
     void buildMenu();
 
 protected:
     int getPresetIndex();
 
-private slots:
-    void setDPadPreset(QAction* action);
-    void setDPadMode(QAction* action);
-    void openMouseSettingsDialog();
-
-private:
-    DPadContextMenuHelper& getHelper();
-
     JoyDPad *dpad;
     DPadContextMenuHelper helper;
 
-    void generateActionPreset(QAction* action, QString actionText, int currentPreset, int& presetMode, QActionGroup* presetGroup);
-    void generateActionMode(QActionGroup *modesGroup, QAction* action, QString actionText, int currentPreset, int presetMode);
+signals:
+
+public slots:
+
+private slots:
+    void setDPadPreset();
+    void setDPadMode();
+    void openMouseSettingsDialog();
 };
 
 #endif // DPADCONTEXTMENU_H

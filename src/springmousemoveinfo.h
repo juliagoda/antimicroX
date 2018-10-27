@@ -19,7 +19,6 @@
 #define SPRINGMOUSEMOVEINFO_H
 
 namespace PadderCommon {
-
     typedef struct _springModeInfo
     {
         // Displacement of the X axis
@@ -28,15 +27,14 @@ namespace PadderCommon {
         double displacementY;
 
         // Width and height of the spring mode box
-        int width; // unsigned
-        int height; // unsigned
+        unsigned int width;
+        unsigned int height;
         // Should the cursor not move around the center
         // of the screen.
         bool relative;
         int screen;
         double springDeadX;
         double springDeadY;
-
     } springModeInfo;
 }
 

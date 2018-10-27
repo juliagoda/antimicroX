@@ -18,32 +18,30 @@
 #ifndef DPADEDITDIALOGHELPER_H
 #define DPADEDITDIALOGHELPER_H
 
-#include "joydpad.h"
-
 #include <QObject>
 #include <QHash>
 
-
-class JoyButtonSlot;
+#include "joydpad.h"
+#include "joybuttonslot.h"
 
 class DPadEditDialogHelper : public QObject
 {
     Q_OBJECT
 public:
-    explicit DPadEditDialogHelper(JoyDPad *dpad, QObject *parent = nullptr);
+    explicit DPadEditDialogHelper(JoyDPad *dpad, QObject *parent = 0);
     void setPendingSlots(QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> *tempSlots);
     void clearPendingSlots();
-    QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> const& getPendingSlots();
+
+protected:
+    JoyDPad *dpad;
+    QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> pendingSlots;
+
+signals:
 
 public slots:
     void setFromPendingSlots();
     void clearButtonsSlotsEventReset();
     void updateJoyDPadDelay(int value);
-
-private:
-    JoyDPad *dpad;
-    QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> pendingSlots;
-
 };
 
 #endif // DPADEDITDIALOGHELPER_H

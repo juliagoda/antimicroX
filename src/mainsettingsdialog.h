@@ -19,18 +19,15 @@
 #define MAINSETTINGSDIALOG_H
 
 #include <QDialog>
+#include <QTableWidgetItem>
 #include <QHash>
 #include <QList>
 #include <QSettings>
 #include <QMap>
 
-class AntiMicroSettings;
-class InputDevice;
-class QWidget;
-class AutoProfileInfo;
-class QTableWidgetItem;
-class EditAllDefaultAutoProfileDialog;
-class AddEditAutoProfileDialog;
+#include "autoprofileinfo.h"
+#include "inputdevice.h"
+#include "antimicrosettings.h"
 
 namespace Ui {
 class MainSettingsDialog;
@@ -41,20 +38,8 @@ class MainSettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit MainSettingsDialog(AntiMicroSettings *settings, QList<InputDevice*> *devices, QWidget *parent = nullptr);
+    explicit MainSettingsDialog(AntiMicroSettings *settings, QList<InputDevice*> *devices, QWidget *parent = 0);
     ~MainSettingsDialog();
-
-    AntiMicroSettings *getSettings() const;
-
-    QMap<QString, AutoProfileInfo*>* getDefaultAutoProfiles(); // Default profiles assigned to a specific device
-    QMap<QString, QList<AutoProfileInfo*> >* getDeviceAutoProfiles(); // Profiles assigned with an association with an application
-    QMap<QString, QList<AutoProfileInfo*> >* getExeAutoProfiles();
-
-    QList<AutoProfileInfo*>* getDefaultList();
-    QList<AutoProfileInfo*>* getProfileList();
-
-    AutoProfileInfo* getAllDefaultProfile() const;
-    QList<InputDevice*>* getConnectedDevices() const;
 
 protected:
     void fillControllerMappingsTable();
@@ -67,6 +52,27 @@ protected:
     void changePresetLanguage();
     void fillSpringScreenPresets();
     void refreshExtraMouseInfo();
+
+    AntiMicroSettings *settings;
+
+    // GUID, AutoProfileInfo*
+    // Default profiles assigned to a specific device
+    QMap<QString, AutoProfileInfo*> defaultAutoProfiles;
+    // GUID, QList<AutoProfileInfo*>
+    // Profiles assigned with an association with an application
+    QMap<QString, QList<AutoProfileInfo*> > deviceAutoProfiles;
+    // Path, QList<AutoProfileInfo*>
+    // TODO: CHECK IF NEEDED ANYMORE
+    QMap<QString, QList<AutoProfileInfo*> > exeAutoProfiles;
+
+    QList<AutoProfileInfo*> defaultList;
+    QList<AutoProfileInfo*> profileList;
+
+    AutoProfileInfo* allDefaultProfile;
+    QList<InputDevice*> *connectedDevices;
+
+private:
+    Ui::MainSettingsDialog *ui;
 
 signals:
     void changeLanguage(QString language);
@@ -86,37 +92,14 @@ protected slots:
     void openEditAutoProfileDialog();
     void openDeleteAutoProfileConfirmDialog();
     void changeAutoProfileButtonsState();
-    void transferEditsToCurrentTableRow(AddEditAutoProfileDialog *dialog);
-    void transferAllProfileEditToCurrentTableRow(EditAllDefaultAutoProfileDialog* dialog);
+    void transferEditsToCurrentTableRow();
+    void transferAllProfileEditToCurrentTableRow();
     void addNewAutoProfile();
     void autoProfileButtonsActiveState(bool enabled);
     void changeKeyRepeatWidgetsStatus(bool enabled);
     void checkSmoothingWidgetStatus(bool enabled);
     void resetMouseAcceleration();
     void selectLogFile();
-
-private slots:
-    void on_resetBtn_clicked();
-
-private:
-    Ui::MainSettingsDialog *ui;
-
-    AntiMicroSettings *settings;
-
-    QMap<QString, AutoProfileInfo*> defaultAutoProfiles; // Default profiles assigned to a specific device
-    QMap<QString, QList<AutoProfileInfo*> > deviceAutoProfiles; // Profiles assigned with an association with an application
-    QMap<QString, QList<AutoProfileInfo*> > exeAutoProfiles;
-
-    QList<AutoProfileInfo*> defaultList;
-    QList<AutoProfileInfo*> profileList;
-
-    AutoProfileInfo* allDefaultProfile;
-    QList<InputDevice*> *connectedDevices;
-
-    void resetGeneralSett();
-    void resetAutoProfSett();
-    void resetMouseSett();
-    void resetAdvancedSett();
 };
 
 #endif // MAINSETTINGSDIALOG_H

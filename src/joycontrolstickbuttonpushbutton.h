@@ -18,12 +18,10 @@
 #ifndef JOYCONTROLSTICKBUTTONPUSHBUTTON_H
 #define JOYCONTROLSTICKBUTTONPUSHBUTTON_H
 
-#include "flashbuttonwidget.h"
-
 #include <QPoint>
 
-class JoyControlStickButton;
-class QWidget;
+#include "flashbuttonwidget.h"
+#include "joybuttontypes/joycontrolstickbutton.h"
 
 class JoyControlStickButtonPushButton : public FlashButtonWidget
 {
@@ -31,24 +29,25 @@ class JoyControlStickButtonPushButton : public FlashButtonWidget
     Q_PROPERTY(bool isflashing READ isButtonFlashing)
 
 public:
-    explicit JoyControlStickButtonPushButton(JoyControlStickButton *button, bool displayNames, QWidget *parent = nullptr);
+    explicit JoyControlStickButtonPushButton(JoyControlStickButton *button, bool displayNames, QWidget *parent = 0);
 
     JoyControlStickButton* getButton();
     void setButton(JoyControlStickButton *button);
     void tryFlash();
 
 protected:
-    virtual QString generateLabel() override;
+    virtual QString generateLabel();
+
+    JoyControlStickButton *button;
+    
+signals:
 
 public slots:
-    void disableFlashes() override;
-    void enableFlashes() override;
+    void disableFlashes();
+    void enableFlashes();
 
 private slots:
     void showContextMenu(const QPoint &point);
-
-private:
-    JoyControlStickButton *button;
 };
 
 #endif // JOYCONTROLSTICKBUTTONPUSHBUTTON_H

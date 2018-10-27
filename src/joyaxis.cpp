@@ -15,62 +15,56 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joyaxis.h"
-
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "joycontrolstick.h"
-#include "setjoystick.h"
-#include "inputdevice.h"
-#include "joyaxis.h"
-#include "event.h"
-
+//#include <QDebug>
 #include <cmath>
 
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-#include <QtGlobal>
-#include <QDebug>
+#include "joyaxis.h"
+#include "joycontrolstick.h"
+#include "inputdevice.h"
+#include "event.h"
+
+// Set default values for many properties.
+const int JoyAxis::AXISMIN = -32767;
+const int JoyAxis::AXISMAX = 32767;
+const int JoyAxis::AXISDEADZONE = 6000;
+const int JoyAxis::AXISMAXZONE = 32000;
+
+// Speed in pixels/second
+const float JoyAxis::JOYSPEED = 20.0;
 
 const JoyAxis::ThrottleTypes JoyAxis::DEFAULTTHROTTLE = JoyAxis::NormalThrottle;
+
+const QString JoyAxis::xmlName = "axis";
 
 JoyAxis::JoyAxis(int index, int originset, SetJoystick *parentSet,
                  QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    m_stick = nullptr;
+    stick = 0;
     lastKnownThottledValue = 0;
     lastKnownRawValue = 0;
-    axis_max_cal = -1;
-    axis_min_cal = -1;
-    axis_center_cal = -1;
-    m_originset = originset;
-    m_parentSet = parentSet;
+    this->originset = originset;
+    this->parentSet = parentSet;
     naxisbutton = new JoyAxisButton(this, 0, originset, parentSet, this);
     paxisbutton = new JoyAxisButton(this, 1, originset, parentSet, this);
 
-    resetPrivateVars();
-    m_index = index;
+    reset();
+    this->index = index;
 }
 
 JoyAxis::~JoyAxis()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    resetPrivateVars();
+    reset();
 }
 
 void JoyAxis::queuePendingEvent(int value, bool ignoresets, bool updateLastValues)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     pendingEvent = false;
     pendingValue = 0;
     pendingIgnoreSets = false;
+    //pendingUpdateLastValues = true;
 
-    if (m_stick != nullptr)
+    if (this->stick)
     {
         stickPassEvent(value, ignoresets, updateLastValues);
     }
@@ -79,13 +73,12 @@ void JoyAxis::queuePendingEvent(int value, bool ignoresets, bool updateLastValue
         pendingEvent = true;
         pendingValue = value;
         pendingIgnoreSets = ignoresets;
+        //pendingUpdateLastValues = updateLastValues;
     }
 }
 
 void JoyAxis::activatePendingEvent()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (pendingEvent)
     {
         joyEvent(pendingValue, pendingIgnoreSets);
@@ -93,20 +86,17 @@ void JoyAxis::activatePendingEvent()
         pendingEvent = false;
         pendingValue = false;
         pendingIgnoreSets = false;
+        //pendingUpdateLastValues = true;
     }
 }
 
 bool JoyAxis::hasPendingEvent()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return pendingEvent;
 }
 
 void JoyAxis::clearPendingEvent()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     pendingEvent = false;
     pendingValue = false;
     pendingIgnoreSets = false;
@@ -114,9 +104,7 @@ void JoyAxis::clearPendingEvent()
 
 void JoyAxis::stickPassEvent(int value, bool ignoresets, bool updateLastValues)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (m_stick != nullptr)
+    if (this->stick)
     {
         if (updateLastValues)
         {
@@ -125,7 +113,7 @@ void JoyAxis::stickPassEvent(int value, bool ignoresets, bool updateLastValues)
         }
 
         setCurrentRawValue(value);
-
+        //currentRawValue = value;
         bool safezone = !inDeadZone(currentRawValue);
         currentThrottledValue = calculateThrottledValue(value);
 
@@ -140,8 +128,14 @@ void JoyAxis::stickPassEvent(int value, bool ignoresets, bool updateLastValues)
             emit released(value);
         }
 
-        if (!ignoresets) m_stick->queueJoyEvent(ignoresets);
-        else m_stick->joyEvent(ignoresets);
+        if (!ignoresets)
+        {
+            stick->queueJoyEvent(ignoresets);
+        }
+        else
+        {
+            stick->joyEvent(ignoresets);
+        }
 
         emit moved(currentRawValue);
     }
@@ -149,9 +143,7 @@ void JoyAxis::stickPassEvent(int value, bool ignoresets, bool updateLastValues)
 
 void JoyAxis::joyEvent(int value, bool ignoresets, bool updateLastValues)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((m_stick != nullptr) && !pendingEvent)
+    if (this->stick && !pendingEvent)
     {
         stickPassEvent(value, ignoresets, updateLastValues);
     }
@@ -164,16 +156,15 @@ void JoyAxis::joyEvent(int value, bool ignoresets, bool updateLastValues)
         }
 
         setCurrentRawValue(value);
-
+        //currentRawValue = value;
         bool safezone = !inDeadZone(currentRawValue);
         currentThrottledValue = calculateThrottledValue(value);
 
         // If in joystick mode and this is the first detected event,
         // use the current value as the axis center point. If the value
         // is below -30,000 then consider it a trigger.
-        InputDevice *device = m_parentSet->getInputDevice();
-
-        if (!device->isGameController() && !device->hasCalibrationThrottle(m_index))
+        InputDevice *device = parentSet->getInputDevice();
+        if (!device->isGameController() && !device->hasCalibrationThrottle(index))
         {
             performCalibration(currentRawValue);
             safezone = !inDeadZone(currentRawValue);
@@ -190,6 +181,7 @@ void JoyAxis::joyEvent(int value, bool ignoresets, bool updateLastValues)
         {
             isActive = eventActive = false;
             emit released(value);
+
             createDeskEvent(ignoresets);
         }
         else if (isActive)
@@ -203,24 +195,12 @@ void JoyAxis::joyEvent(int value, bool ignoresets, bool updateLastValues)
 
 bool JoyAxis::inDeadZone(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool result = false;
     int temp = calculateThrottledValue(value);
 
     if (abs(temp) <= deadZone)
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Value of throttle is in (less than) dead zone: " << abs(temp) << " <= " << deadZone;
-        #endif
-
         result = true;
-
-    } else {
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Value of throttle is not in (greater than) dead zone: " << abs(temp) << " > " << deadZone;
-        #endif
     }
 
     return result;
@@ -228,15 +208,13 @@ bool JoyAxis::inDeadZone(int value)
 
 QString JoyAxis::getName(bool forceFullFormat, bool displayNames)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QString label = getPartialName(forceFullFormat, displayNames);
+
     label.append(": ");
 
-    if (throttle == static_cast<int>(NormalThrottle))
+    if (throttle == NormalThrottle)
     {
         label.append("-");
-
         if (!naxisbutton->getActionName().isEmpty() && displayNames)
         {
             label.append(naxisbutton->getActionName());
@@ -247,7 +225,6 @@ QString JoyAxis::getName(bool forceFullFormat, bool displayNames)
         }
 
         label.append(" | +");
-
         if (!paxisbutton->getActionName().isEmpty() && displayNames)
         {
             label.append(paxisbutton->getActionName());
@@ -257,10 +234,9 @@ QString JoyAxis::getName(bool forceFullFormat, bool displayNames)
             label.append(paxisbutton->getCalculatedActiveZoneSummary());
         }
     }
-    else if ((throttle == static_cast<int>(PositiveThrottle)) || (throttle == static_cast<int>(PositiveHalfThrottle)))
+    else if (throttle == PositiveThrottle || throttle == PositiveHalfThrottle)
     {
         label.append("+");
-
         if (!paxisbutton->getActionName().isEmpty() && displayNames)
         {
             label.append(paxisbutton->getActionName());
@@ -270,10 +246,9 @@ QString JoyAxis::getName(bool forceFullFormat, bool displayNames)
             label.append(paxisbutton->getCalculatedActiveZoneSummary());
         }
     }
-    else if ((throttle == static_cast<int>(NegativeThrottle)) || (throttle == static_cast<int>(NegativeHalfThrottle)))
+    else if (throttle == NegativeThrottle || throttle == NegativeHalfThrottle)
     {
         label.append("-");
-
         if (!naxisbutton->getActionName().isEmpty() && displayNames)
         {
             label.append(naxisbutton->getActionName());
@@ -289,118 +264,82 @@ QString JoyAxis::getName(bool forceFullFormat, bool displayNames)
 
 int JoyAxis::getRealJoyIndex()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_index + 1;
+    return index + 1;
 }
 
 int JoyAxis::getCurrentThrottledValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return currentThrottledValue;
 }
 
 int JoyAxis::calculateThrottledValue(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "Throtted value at start of function is: " << value;
-    #endif
-
     int temp = value;
 
-    switch(throttle)
+    if (throttle == NegativeHalfThrottle)
     {
-
-        case -2:
-            #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "It's a negative half throttle";
-            #endif
-
-            value = (value <= 0) ? value : -value;
-            temp = value;
-        break;
-
-        case -1:
-            #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "It's a negative throttle";
-            #endif
-
-            temp = (value + getAxisMinCal()) / 2;
-        break;
-
-        case 1:
-            #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "It's a positive throttle";
-            #endif
-
-            temp = (value + getAxisMaxCal()) / 2;
-        break;
-
-        case 2:
-            #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "It's a positive half throttle";
-            #endif
-
-            value = (value >= 0) ? value : -value;
-            temp = value;
-        break;
-
+        value = value <= 0 ? value : -value;
+        temp = value;
     }
-
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "Calculated value of throttle is: " << temp;
-    #endif
+    else if (throttle == NegativeThrottle)
+    {
+        temp = (value + AXISMIN) / 2;
+    }
+    else if (throttle == PositiveThrottle)
+    {
+        temp = (value + AXISMAX) / 2;
+    }
+    else if (throttle == PositiveHalfThrottle)
+    {
+        value = value >= 0 ? value : -value;
+        temp = value;
+    }
 
     return temp;
 }
 
 void JoyAxis::setIndex(int index)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    m_index = index;
+    this->index = index;
 }
 
 int JoyAxis::getIndex()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_index;
+    return index;
 }
 
 
 void JoyAxis::createDeskEvent(bool ignoresets)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    JoyAxisButton *eventbutton = 0;
+    if (currentThrottledValue > deadZone)
+    {
+        eventbutton = paxisbutton;
+    }
+    else if (currentThrottledValue < -deadZone)
+    {
+        eventbutton = naxisbutton;
+    }
 
-    JoyAxisButton *eventbutton = nullptr;
-
-    if (currentThrottledValue > deadZone) eventbutton = paxisbutton;
-    else if (currentThrottledValue < -deadZone) eventbutton = naxisbutton;
-
-    if ((eventbutton != nullptr) && !activeButton)
+    if (eventbutton && !activeButton)
     {
         // There is no active button. Call joyEvent and set current
         // button as active button
         eventbutton->joyEvent(eventActive, ignoresets);
         activeButton = eventbutton;
     }
-    else if ((eventbutton == nullptr) && (activeButton != nullptr))
+    else if (!eventbutton && activeButton)
     {
         // Currently in deadzone. Disable currently active button.
         activeButton->joyEvent(eventActive, ignoresets);
-        activeButton = nullptr;
+        activeButton = 0;
     }
-    else if ((eventbutton != nullptr) && (activeButton != nullptr) && (eventbutton == activeButton))
+    else if (eventbutton && activeButton && eventbutton == activeButton)
     {
         //Button is currently active. Just pass current value
         eventbutton->joyEvent(eventActive, ignoresets);
     }
-    else if ((eventbutton != nullptr) && (activeButton != nullptr) && (eventbutton != activeButton))
+    else if (eventbutton && activeButton && eventbutton != activeButton)
     {
         // Deadzone skipped. Button for new event is not the currently
         // active button. Disable the active button before enabling
@@ -413,28 +352,21 @@ void JoyAxis::createDeskEvent(bool ignoresets)
 
 void JoyAxis::setDeadZone(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     deadZone = abs(value);
     emit propertyUpdated();
 }
 
 int JoyAxis::getDeadZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return deadZone;
 }
 
 void JoyAxis::setMaxZoneValue(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     value = abs(value);
-
-    if (value >=getAxisMaxCal())
+    if (value >= AXISMAX)
     {
-        maxZoneValue = getAxisMaxCal();
+        maxZoneValue = AXISMAX;
         emit propertyUpdated();
     }
     else
@@ -446,8 +378,6 @@ void JoyAxis::setMaxZoneValue(int value)
 
 int JoyAxis::getMaxZoneValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return maxZoneValue;
 }
 
@@ -457,20 +387,10 @@ int JoyAxis::getMaxZoneValue()
  */
 void JoyAxis::setThrottle(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "Value of throttle for axis in setThrottle is: " << value;
-    #endif
-
-    if ((value >= static_cast<int>(JoyAxis::NegativeHalfThrottle)) && (value <= static_cast<int>(JoyAxis::PositiveHalfThrottle)))
+    if (value >= JoyAxis::NegativeHalfThrottle && value <= JoyAxis::PositiveHalfThrottle)
     {
         if (value != throttle)
         {
-            #ifndef QT_DEBUG_NO_OUTPUT
-                qDebug() << "Throttle value for variable \"throttle\" has been set: " << value;
-            #endif
-
             throttle = value;
             adjustRange();
             emit throttleChanged();
@@ -486,43 +406,43 @@ void JoyAxis::setThrottle(int value)
  */
 void JoyAxis::setInitialThrottle(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((value >= static_cast<int>(JoyAxis::NegativeHalfThrottle)) && (value <= static_cast<int>(JoyAxis::PositiveHalfThrottle))
-            && (value != throttle))
+    if (value >= JoyAxis::NegativeHalfThrottle && value <= JoyAxis::PositiveHalfThrottle)
     {
-        throttle = value;
-        adjustRange();
-        emit throttleChanged();
+        if (value != throttle)
+        {
+            throttle = value;
+            adjustRange();
+            emit throttleChanged();
+        }
     }
 }
 
 int JoyAxis::getThrottle()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return throttle;
 }
 
 void JoyAxis::readConfig(QXmlStreamReader *xml)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (xml->isStartElement() && (xml->name() == getXmlName()))
+    if (xml->isStartElement() && xml->name() == getXmlName())
     {
+        //reset();
+
         xml->readNextStartElement();
-
-        while (!xml->atEnd() && (!xml->isEndElement() && (xml->name() != getXmlName())))
+        while (!xml->atEnd() && (!xml->isEndElement() && xml->name() != getXmlName()))
         {
-            bool found = readMainConfig(xml);
-
-            if (!found && (xml->name() == naxisbutton->getXmlName()) && xml->isStartElement())
+            bool found = false;
+            found = readMainConfig(xml);
+            if (!found && xml->name() == naxisbutton->getXmlName() && xml->isStartElement())
             {
                 found = true;
                 readButtonConfig(xml);
             }
 
-            if (!found) xml->skipCurrentElement();
+            if (!found)
+            {
+                xml->skipCurrentElement();
+            }
 
             xml->readNextStartElement();
         }
@@ -531,51 +451,52 @@ void JoyAxis::readConfig(QXmlStreamReader *xml)
 
 void JoyAxis::writeConfig(QXmlStreamWriter *xml)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool currentlyDefault = isDefault();
 
     xml->writeStartElement(getXmlName());
-    xml->writeAttribute("index", QString::number(m_index+1));
+    xml->writeAttribute("index", QString::number(index+1));
 
     if (!currentlyDefault)
     {
-        if (deadZone != GlobalVariables::JoyAxis::AXISDEADZONE)
-            xml->writeTextElement("deadZone", QString::number(deadZone));
-
-        if (maxZoneValue != GlobalVariables::JoyAxis::AXISMAXZONE)
-            xml->writeTextElement("maxZone", QString::number(maxZoneValue));
-    }
-
-    xml->writeTextElement("center_value", QString::number(axis_center_cal));
-    xml->writeTextElement("min_value", QString::number(axis_min_cal));
-    xml->writeTextElement("max_value", QString::number(axis_max_cal));
-    xml->writeStartElement("throttle");
-
-        switch(throttle)
+        if (deadZone != AXISDEADZONE)
         {
-            case -2:
-                xml->writeCharacters("negativehalf");
-            break;
-
-            case -1:
-                xml->writeCharacters("negative");
-            break;
-
-            case 0:
-                xml->writeCharacters("normal");
-            break;
-
-            case 1:
-                xml->writeCharacters("positive");
-            break;
-
-            case 2:
-                xml->writeCharacters("positivehalf");
-            break;
+            xml->writeTextElement("deadZone", QString::number(deadZone));
         }
 
-    xml->writeEndElement();
+        if (maxZoneValue != AXISMAXZONE)
+        {
+            xml->writeTextElement("maxZone", QString::number(maxZoneValue));
+        }
+    }
+
+
+    //if (throttle != DEFAULTTHROTTLE)
+    //{
+        xml->writeStartElement("throttle");
+
+        if (throttle == JoyAxis::NegativeHalfThrottle)
+        {
+            xml->writeCharacters("negativehalf");
+        }
+        else if (throttle == JoyAxis::NegativeThrottle)
+        {
+            xml->writeCharacters("negative");
+        }
+        else if (throttle == JoyAxis::NormalThrottle)
+        {
+            xml->writeCharacters("normal");
+        }
+        else if (throttle == JoyAxis::PositiveThrottle)
+        {
+            xml->writeCharacters("positive");
+        }
+        else if (throttle == JoyAxis::PositiveHalfThrottle)
+        {
+            xml->writeCharacters("positivehalf");
+        }
+
+        xml->writeEndElement();
+    //}
 
     if (!currentlyDefault)
     {
@@ -589,110 +510,56 @@ void JoyAxis::writeConfig(QXmlStreamWriter *xml)
 
 bool JoyAxis::readMainConfig(QXmlStreamReader *xml)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool found = false;
 
-    if ((xml->name() == "deadZone") && xml->isStartElement())
+    if (xml->name() == "deadZone" && xml->isStartElement())
     {
         found = true;
         QString temptext = xml->readElementText();
         int tempchoice = temptext.toInt();
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "From xml config dead zone is: " << tempchoice;
-        #endif
-
         this->setDeadZone(tempchoice);
     }
-    else if ((xml->name() == "maxZone") && xml->isStartElement())
+    else if (xml->name() == "maxZone" && xml->isStartElement())
     {
         found = true;
         QString temptext = xml->readElementText();
         int tempchoice = temptext.toInt();
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "From xml config max zone is: " << tempchoice;
-        #endif
-
         this->setMaxZoneValue(tempchoice);
     }
-    else if ((xml->name() == "center_value") && xml->isStartElement())
+    else if (xml->name() == "throttle" && xml->isStartElement())
     {
         found = true;
         QString temptext = xml->readElementText();
-        int tempchoice = temptext.toInt();
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "From xml config center value is: " << tempchoice;
-        #endif
-
-        this->setAxisCenterCal(tempchoice);
-    }
-    else if ((xml->name() == "min_value") && xml->isStartElement())
-    {
-        found = true;
-        QString temptext = xml->readElementText();
-        int tempchoice = temptext.toInt();
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "From xml config min value is: " << tempchoice;
-        #endif
-
-        this->setAxisMinCal(tempchoice);
-    }
-    else if ((xml->name() == "max_value") && xml->isStartElement())
-    {
-
-        found = true;
-        QString temptext = xml->readElementText();
-        int tempchoice = temptext.toInt();
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "From xml config max value is: " << tempchoice;
-        #endif
-
-        this->setAxisMaxCal(tempchoice);
-    }
-    else if ((xml->name() == "throttle") && xml->isStartElement())
-    {
-        found = true;
-        QString temptext = xml->readElementText();
-
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "From xml config throttle name is: " << temptext;
-        #endif
-
         if (temptext == "negativehalf")
         {
-            this->setThrottle(static_cast<int>(JoyAxis::NegativeHalfThrottle));
+            this->setThrottle(JoyAxis::NegativeHalfThrottle);
         }
         else if (temptext == "negative")
         {
-            this->setThrottle(static_cast<int>(JoyAxis::NegativeThrottle));
+            this->setThrottle(JoyAxis::NegativeThrottle);
         }
         else if (temptext == "normal")
         {
-            this->setThrottle(static_cast<int>(JoyAxis::NormalThrottle));
+            this->setThrottle(JoyAxis::NormalThrottle);
         }
         else if (temptext == "positive")
         {
-            this->setThrottle(static_cast<int>(JoyAxis::PositiveThrottle));
+            this->setThrottle(JoyAxis::PositiveThrottle);
         }
         else if (temptext == "positivehalf")
         {
-            this->setThrottle(static_cast<int>(JoyAxis::PositiveHalfThrottle));
+            this->setThrottle(JoyAxis::PositiveHalfThrottle);
         }
 
-        InputDevice *device = m_parentSet->getInputDevice();
-
-        if (!device->hasCalibrationThrottle(m_index))
+        InputDevice *device = parentSet->getInputDevice();
+        if (!device->hasCalibrationThrottle(index))
         {
-            device->setCalibrationStatus(m_index,
+            device->setCalibrationStatus(index,
                                          static_cast<JoyAxis::ThrottleTypes>(throttle));
         }
 
         setCurrentRawValue(currentThrottledDeadValue);
+        //currentRawValue = currentThrottledDeadValue;
         currentThrottledValue = calculateThrottledValue(currentRawValue);
     }
 
@@ -701,18 +568,15 @@ bool JoyAxis::readMainConfig(QXmlStreamReader *xml)
 
 bool JoyAxis::readButtonConfig(QXmlStreamReader *xml)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool found = false;
 
-    int index_local = xml->attributes().value("index").toString().toInt();
-
-    if (index_local == 1)
+    int index = xml->attributes().value("index").toString().toInt();
+    if (index == 1)
     {
         found = true;
         naxisbutton->readConfig(xml);
     }
-    else if (index_local == 2)
+    else if (index == 2)
     {
         found = true;
         paxisbutton->readConfig(xml);
@@ -723,22 +587,16 @@ bool JoyAxis::readButtonConfig(QXmlStreamReader *xml)
 
 void JoyAxis::reset()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-    resetPrivateVars();
-}
-
-void JoyAxis::resetPrivateVars()
-{
-    deadZone = GlobalVariables::JoyAxis::AXISDEADZONE;
+    deadZone = getDefaultDeadZone();
     isActive = false;
 
     eventActive = false;
-    maxZoneValue = GlobalVariables::JoyAxis::AXISMAXZONE;
-    throttle = this->DEFAULTTHROTTLE;
+    maxZoneValue = getDefaultMaxZone();
+    throttle = getDefaultThrottle();
 
     paxisbutton->reset();
     naxisbutton->reset();
-    activeButton = nullptr;
+    activeButton = 0;
     lastKnownThottledValue = 0;
     lastKnownRawValue = 0;
 
@@ -750,54 +608,45 @@ void JoyAxis::resetPrivateVars()
     pendingEvent = false;
     pendingValue = currentRawValue;
     pendingIgnoreSets = false;
+    //pendingUpdateLastValues = true;
 }
 
 void JoyAxis::reset(int index)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     reset();
-    m_index = index;
+    this->index = index;
 }
 
 JoyAxisButton* JoyAxis::getPAxisButton()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return paxisbutton;
 }
 
 JoyAxisButton* JoyAxis::getNAxisButton()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return naxisbutton;
 }
 
 int JoyAxis::getCurrentRawValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return currentRawValue;
 }
 
 void JoyAxis::adjustRange()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (throttle == static_cast<int>(JoyAxis::NegativeThrottle))
+    if (throttle == JoyAxis::NegativeThrottle)
     {
-        currentThrottledDeadValue = getAxisMaxCal();
+        currentThrottledDeadValue = AXISMAX;
     }
-    else if ((throttle == static_cast<int>(JoyAxis::NormalThrottle)) ||
-             (throttle == static_cast<int>(JoyAxis::PositiveHalfThrottle)) ||
-             (throttle == static_cast<int>(JoyAxis::NegativeHalfThrottle)))
+    else if (throttle == JoyAxis::NormalThrottle ||
+             throttle == JoyAxis::PositiveHalfThrottle ||
+             throttle == JoyAxis::NegativeHalfThrottle)
     {
         currentThrottledDeadValue = 0;
     }
-    else if (throttle == static_cast<int>(JoyAxis::PositiveThrottle))
+    else if (throttle == JoyAxis::PositiveThrottle)
     {
-        currentThrottledDeadValue = getAxisMinCal();
+        currentThrottledDeadValue = AXISMIN;
     }
 
     currentThrottledValue = calculateThrottledValue(currentRawValue);
@@ -805,34 +654,30 @@ void JoyAxis::adjustRange()
 
 int JoyAxis::getCurrentThrottledDeadValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return currentThrottledDeadValue;
 }
 
 double JoyAxis::getDistanceFromDeadZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return getDistanceFromDeadZone(currentThrottledValue);
 }
 
 double JoyAxis::getDistanceFromDeadZone(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     double distance = 0.0;
+    int currentValue = value;
 
-    if (value >= deadZone)
+    if (currentValue >= deadZone)
     {
-        distance = static_cast<double>((value - deadZone)/(maxZoneValue - deadZone));
+        distance = (currentValue - deadZone)/static_cast<double>(maxZoneValue - deadZone);
     }
-    else if (value <= -deadZone)
+    else if (currentValue <= -deadZone)
     {
-        distance = static_cast<double>((value + deadZone)/( (-maxZoneValue) + deadZone));
+        distance = (currentValue + deadZone)/static_cast<double>(-maxZoneValue + deadZone);
     }
 
-    return qBound(0.0, distance, 1.0);
+    distance = qBound(0.0, distance, 1.0);
+    return distance;
 }
 
 /**
@@ -843,70 +688,62 @@ double JoyAxis::getDistanceFromDeadZone(int value)
  */
 double JoyAxis::getRawDistance(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    double distance = 0.0;
+    int currentValue = value;
 
-    return qBound(-1.0, static_cast<double>(value / maxZoneValue), 1.0);
+    distance = currentValue / static_cast<double>(maxZoneValue);
+    distance = qBound(-1.0, distance, 1.0);
+
+    return distance;
 }
 
 void JoyAxis::propogateThrottleChange()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    emit throttleChangePropogated(m_index);
+    emit throttleChangePropogated(this->index);
 }
 
 int JoyAxis::getCurrentlyAssignedSet()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_originset;
+    return originset;
 }
 
 void JoyAxis::setControlStick(JoyControlStick *stick)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     removeVDPads();
     removeControlStick();
-    m_stick = stick;
+    this->stick = stick;
     emit propertyUpdated();
 }
 
 bool JoyAxis::isPartControlStick()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return (m_stick != nullptr);
+    return (this->stick != 0);
 }
 
 JoyControlStick* JoyAxis::getControlStick()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_stick;
+    return this->stick;
 }
 
 void JoyAxis::removeControlStick(bool performRelease)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (m_stick != nullptr)
+    if (stick)
     {
         if (performRelease)
-            m_stick->releaseButtonEvents();
+        {
+            stick->releaseButtonEvents();
+        }
 
-        m_stick = nullptr;
+        this->stick = 0;
         emit propertyUpdated();
     }
 }
 
 
+
 bool JoyAxis::hasControlOfButtons()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool value = true;
-
     if (paxisbutton->isPartVDPad() || naxisbutton->isPartVDPad())
     {
         value = false;
@@ -917,8 +754,6 @@ bool JoyAxis::hasControlOfButtons()
 
 void JoyAxis::removeVDPads()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (paxisbutton->isPartVDPad())
     {
         paxisbutton->joyEvent(false, true);
@@ -934,14 +769,12 @@ void JoyAxis::removeVDPads()
 
 bool JoyAxis::isDefault()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool value = true;
     value = value && (deadZone == getDefaultDeadZone());
     value = value && (maxZoneValue == getDefaultMaxZone());
+    //value = value && (throttle == getDefaultThrottle());
     value = value && (paxisbutton->isDefault());
     value = value && (naxisbutton->isDefault());
-
     return value;
 }
 
@@ -952,52 +785,29 @@ bool JoyAxis::isDefault()
  */
 void JoyAxis::setCurrentRawValue(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((value >= getAxisMinCal()) && (value <= getAxisMaxCal()))
+    if (value >= JoyAxis::AXISMIN && value <= JoyAxis::AXISMAX)
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Raw value is less than " << getAxisMaxCal() << " and greather than " << getAxisMinCal();
-        #endif
-
         currentRawValue = value;
     }
-    else if (value > getAxisMaxCal())
+    else if (value > JoyAxis::AXISMAX)
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Raw value is greather than " << getAxisMaxCal();
-        #endif
-
-        currentRawValue = getAxisMaxCal();
+        currentRawValue = JoyAxis::AXISMAX;
     }
-    else if (value < getAxisMinCal())
+    else if (value < JoyAxis::AXISMIN)
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Raw value is less than " << getAxisMinCal();
-        #endif
-
-        currentRawValue = getAxisMinCal();
+        currentRawValue = JoyAxis::AXISMIN;
     }
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "Raw value for axis is: " << currentRawValue;
-    #endif
 }
 
 void JoyAxis::setButtonsMouseMode(JoyButton::JoyMouseMovementMode mode)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setMouseMode(mode);
     naxisbutton->setMouseMode(mode);
 }
 
 bool JoyAxis::hasSameButtonsMouseMode()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool result = true;
-
     if (paxisbutton->getMouseMode() != naxisbutton->getMouseMode())
     {
         result = false;
@@ -1008,28 +818,23 @@ bool JoyAxis::hasSameButtonsMouseMode()
 
 JoyButton::JoyMouseMovementMode JoyAxis::getButtonsPresetMouseMode()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     JoyButton::JoyMouseMovementMode resultMode = JoyButton::MouseCursor;
-
     if (paxisbutton->getMouseMode() == naxisbutton->getMouseMode())
+    {
         resultMode = paxisbutton->getMouseMode();
+    }
 
     return resultMode;
 }
 
 void JoyAxis::setButtonsMouseCurve(JoyButton::JoyMouseCurve mouseCurve)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setMouseCurve(mouseCurve);
     naxisbutton->setMouseCurve(mouseCurve);
 }
 
 bool JoyAxis::hasSameButtonsMouseCurve()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool result = true;
     if (paxisbutton->getMouseCurve() != naxisbutton->getMouseCurve())
     {
@@ -1041,8 +846,6 @@ bool JoyAxis::hasSameButtonsMouseCurve()
 
 JoyButton::JoyMouseCurve JoyAxis::getButtonsPresetMouseCurve()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     JoyButton::JoyMouseCurve resultCurve = JoyButton::LinearCurve;
     if (paxisbutton->getMouseCurve() == naxisbutton->getMouseCurve())
     {
@@ -1054,89 +857,68 @@ JoyButton::JoyMouseCurve JoyAxis::getButtonsPresetMouseCurve()
 
 void JoyAxis::setButtonsSpringWidth(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setSpringWidth(value);
     naxisbutton->setSpringWidth(value);
 }
 
 void JoyAxis::setButtonsSpringHeight(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setSpringHeight(value);
     naxisbutton->setSpringHeight(value);
 }
 
 int JoyAxis::getButtonsPresetSpringWidth()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int presetSpringWidth = 0;
 
     if (paxisbutton->getSpringWidth() == naxisbutton->getSpringWidth())
+    {
         presetSpringWidth = paxisbutton->getSpringWidth();
+    }
 
     return presetSpringWidth;
 }
 
 int JoyAxis::getButtonsPresetSpringHeight()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int presetSpringHeight = 0;
 
     if (paxisbutton->getSpringHeight() == naxisbutton->getSpringHeight())
+    {
         presetSpringHeight = paxisbutton->getSpringHeight();
+    }
 
     return presetSpringHeight;
 }
 
 void JoyAxis::setButtonsSensitivity(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setSensitivity(value);
     naxisbutton->setSensitivity(value);
 }
 
 double JoyAxis::getButtonsPresetSensitivity()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     double presetSensitivity = 1.0;
 
-    if (qFuzzyCompare(paxisbutton->getSensitivity(), naxisbutton->getSensitivity()))
+    if (paxisbutton->getSensitivity() == naxisbutton->getSensitivity())
+    {
         presetSensitivity = paxisbutton->getSensitivity();
+    }
 
     return presetSensitivity;
 }
 
 JoyAxisButton* JoyAxis::getAxisButtonByValue(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    JoyAxisButton *eventbutton = nullptr;
+    JoyAxisButton *eventbutton = 0;
     int throttledValue = calculateThrottledValue(value);
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "throttledValue in getAxisButtonByValue is: " << throttledValue;
-    #endif
-
     if (throttledValue > deadZone)
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "throtted value is positive";
-        #endif
-
         eventbutton = paxisbutton;
     }
-    else if (throttledValue < (-deadZone))
+    else if (throttledValue < -deadZone)
     {
-        #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "throtted value is negative";
-        #endif
-
         eventbutton = naxisbutton;
     }
 
@@ -1145,9 +927,7 @@ JoyAxisButton* JoyAxis::getAxisButtonByValue(int value)
 
 void JoyAxis::setAxisName(QString tempName)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((tempName.length() <= 20) && (tempName != axisName))
+    if (tempName.length() <= 20 && tempName != axisName)
     {
         axisName = tempName;
         emit axisNameChanged();
@@ -1157,52 +937,40 @@ void JoyAxis::setAxisName(QString tempName)
 
 QString JoyAxis::getAxisName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return axisName;
 }
 
 void JoyAxis::setButtonsWheelSpeedX(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    paxisbutton->setWheelSpeed(value, 'X');
-    naxisbutton->setWheelSpeed(value, 'X');
+    paxisbutton->setWheelSpeedX(value);
+    naxisbutton->setWheelSpeedX(value);
 }
 
 void JoyAxis::setButtonsWheelSpeedY(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    paxisbutton->setWheelSpeed(value, 'Y');
-    naxisbutton->setWheelSpeed(value, 'Y');
+    paxisbutton->setWheelSpeedY(value);
+    naxisbutton->setWheelSpeedY(value);
 }
 
 void JoyAxis::setDefaultAxisName(QString tempname)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     defaultAxisName = tempname;
 }
 
 QString JoyAxis::getDefaultAxisName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return defaultAxisName;
 }
 
 QString JoyAxis::getPartialName(bool forceFullFormat, bool displayNames)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString label = QString();
+    QString label;
 
     if (!axisName.isEmpty() && displayNames)
     {
         if (forceFullFormat)
         {
-            label.append(trUtf8("Axis")).append(" ");
+            label.append(tr("Axis")).append(" ");
         }
 
         label.append(axisName);
@@ -1211,14 +979,13 @@ QString JoyAxis::getPartialName(bool forceFullFormat, bool displayNames)
     {
         if (forceFullFormat)
         {
-            label.append(trUtf8("Axis")).append(" ");
+            label.append(tr("Axis")).append(" ");
         }
-
         label.append(defaultAxisName);
     }
     else
     {
-        label.append(trUtf8("Axis")).append(" ");
+        label.append(tr("Axis")).append(" ");
         label.append(QString::number(getRealJoyIndex()));
     }
 
@@ -1227,96 +994,79 @@ QString JoyAxis::getPartialName(bool forceFullFormat, bool displayNames)
 
 QString JoyAxis::getXmlName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::JoyAxis::xmlName;
+    return this->xmlName;
 }
 
 int JoyAxis::getDefaultDeadZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::JoyAxis::AXISDEADZONE;
+    return this->AXISDEADZONE;
 }
 
 int JoyAxis::getDefaultMaxZone()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::JoyAxis::AXISMAXZONE;
+    return this->AXISMAXZONE;
 }
 
 JoyAxis::ThrottleTypes JoyAxis::getDefaultThrottle()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return this->DEFAULTTHROTTLE;
 }
 
 SetJoystick* JoyAxis::getParentSet()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_parentSet;
+    return parentSet;
 }
 
 void JoyAxis::establishPropertyUpdatedConnection()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    connect(this, &JoyAxis::propertyUpdated, getParentSet()->getInputDevice(), &InputDevice::profileEdited);
+    connect(this, SIGNAL(propertyUpdated()), getParentSet()->getInputDevice(), SLOT(profileEdited()));
 }
 
 void JoyAxis::disconnectPropertyUpdatedConnection()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    disconnect(this, &JoyAxis::propertyUpdated, getParentSet()->getInputDevice(), &InputDevice::profileEdited);
+    disconnect(this, SIGNAL(propertyUpdated()), getParentSet()->getInputDevice(), SLOT(profileEdited()));
 }
 
 void JoyAxis::setButtonsSpringRelativeStatus(bool value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setSpringRelativeStatus(value);
     naxisbutton->setSpringRelativeStatus(value);
 }
 
 bool JoyAxis::isRelativeSpring()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool relative = false;
 
     if (paxisbutton->isRelativeSpring() == naxisbutton->isRelativeSpring())
+    {
         relative = paxisbutton->isRelativeSpring();
+    }
 
     return relative;
 }
 
 void JoyAxis::performCalibration(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    InputDevice *device = m_parentSet->getInputDevice();
-
+    InputDevice *device = parentSet->getInputDevice();
     if (value <= -30000)
     {
         // Assume axis is a trigger. Set default throttle to Positive.
-        device->setCalibrationThrottle(m_index, PositiveThrottle);
+        device->setCalibrationThrottle(index, PositiveThrottle);
     }
     else
     {
         // Ensure that default throttle is used when a device is reset.
-        device->setCalibrationThrottle(m_index,
+        device->setCalibrationThrottle(index,
                                        static_cast<JoyAxis::ThrottleTypes>(throttle));
     }
+    //else if (value >= -15000 && value <= 15000)
+    //{
+    //    device->setCalibrationThrottle(index, NormalThrottle);
+    //}
 }
 
 void JoyAxis::copyAssignments(JoyAxis *destAxis)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     destAxis->reset();
     destAxis->deadZone = deadZone;
     destAxis->maxZoneValue = maxZoneValue;
@@ -1325,24 +1075,21 @@ void JoyAxis::copyAssignments(JoyAxis *destAxis)
     naxisbutton->copyAssignments(destAxis->naxisbutton);
 
     if (!destAxis->isDefault())
+    {
         emit propertyUpdated();
+    }
 }
 
 void JoyAxis::setButtonsEasingDuration(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setEasingDuration(value);
     naxisbutton->setEasingDuration(value);
 }
 
 double JoyAxis::getButtonsEasingDuration()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    double result = GlobalVariables::JoyButton::DEFAULTEASINGDURATION;
-
-    if (qFuzzyCompare(paxisbutton->getEasingDuration(), naxisbutton->getEasingDuration()))
+    double result = JoyButton::DEFAULTEASINGDURATION;
+    if (paxisbutton->getEasingDuration() == naxisbutton->getEasingDuration())
     {
         result = paxisbutton->getEasingDuration();
     }
@@ -1352,15 +1099,11 @@ double JoyAxis::getButtonsEasingDuration()
 
 int JoyAxis::getLastKnownThrottleValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return lastKnownThottledValue;
 }
 
 int JoyAxis::getLastKnownRawValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return lastKnownRawValue;
 }
 
@@ -1371,24 +1114,22 @@ int JoyAxis::getLastKnownRawValue()
  */
 int JoyAxis::getProperReleaseValue()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     // Handles NormalThrottle case
     int value = 0;
 
-    if (throttle == static_cast<int>(NegativeHalfThrottle))
+    if (throttle == NegativeHalfThrottle)
     {
         value = 0;
     }
-    else if (throttle == static_cast<int>(NegativeThrottle))
+    else if (throttle == NegativeThrottle)
     {
-        value = getAxisMaxCal();
+        value = JoyAxis::AXISMAX;
     }
-    else if (throttle == static_cast<int>(PositiveThrottle))
+    else if (throttle == PositiveThrottle)
     {
-        value = getAxisMinCal();
+        value = JoyAxis::AXISMIN;
     }
-    else if (throttle == static_cast<int>(PositiveHalfThrottle))
+    else if (throttle == PositiveHalfThrottle)
     {
         value = 0;
     }
@@ -1398,18 +1139,13 @@ int JoyAxis::getProperReleaseValue()
 
 void JoyAxis::setExtraAccelerationCurve(JoyButton::JoyExtraAccelerationCurve curve)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     paxisbutton->setExtraAccelerationCurve(curve);
     naxisbutton->setExtraAccelerationCurve(curve);
 }
 
 JoyButton::JoyExtraAccelerationCurve JoyAxis::getExtraAccelerationCurve()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     JoyButton::JoyExtraAccelerationCurve result = JoyButton::LinearAccelCurve;
-
     if (paxisbutton->getExtraAccelerationCurve() == naxisbutton->getExtraAccelerationCurve())
     {
         result = paxisbutton->getExtraAccelerationCurve();
@@ -1420,54 +1156,18 @@ JoyButton::JoyExtraAccelerationCurve JoyAxis::getExtraAccelerationCurve()
 
 void JoyAxis::copyRawValues(JoyAxis *srcAxis)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->lastKnownRawValue = srcAxis->lastKnownRawValue;
     this->currentRawValue = srcAxis->currentRawValue;
 }
 
 void JoyAxis::copyThrottledValues(JoyAxis *srcAxis)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->lastKnownThottledValue = srcAxis->lastKnownThottledValue;
     this->currentThrottledValue = srcAxis->currentThrottledValue;
 }
 
 void JoyAxis::eventReset()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     naxisbutton->eventReset();
     paxisbutton->eventReset();
-}
-
-void JoyAxis::setAxisMinCal(int value) {
-
-    axis_min_cal = value;
-}
-
-int JoyAxis::getAxisMinCal() {
-
-    return ((axis_min_cal != -1) ? axis_min_cal : GlobalVariables::JoyAxis::AXISMIN);
-}
-
-void JoyAxis::setAxisMaxCal(int value) {
-
-    axis_max_cal = value;
-}
-
-int JoyAxis::getAxisMaxCal() {
-
-    return ((axis_max_cal != -1) ? axis_max_cal : GlobalVariables::JoyAxis::AXISMAX);
-}
-
-void JoyAxis::setAxisCenterCal(int value) {
-
-    axis_center_cal = value;
-}
-
-int JoyAxis::getAxisCenterCal() {
-
-    return((axis_center_cal != -1) ? axis_center_cal : 0);
 }

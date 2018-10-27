@@ -17,77 +17,58 @@
 
 #include "gamecontrollerdpad.h"
 
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "setjoystick.h"
-#include "joybutton.h"
-
-#include <QXmlStreamReader>
-#include <QDebug>
-
+const QString GameControllerDPad::xmlName = "dpad";
 
 GameControllerDPad::GameControllerDPad(JoyButton *upButton, JoyButton *downButton, JoyButton *leftButton, JoyButton *rightButton,
                                        int index, int originset, SetJoystick *parentSet, QObject *parent) :
     VDPad(upButton, downButton, leftButton, rightButton, index, originset, parentSet, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
-
 
 QString GameControllerDPad::getName(bool forceFullFormat, bool displayName)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    QString label;
 
-    QString label = QString();
-
-    if (!getDpadName().isEmpty() && displayName)
+    if (!dpadName.isEmpty() && displayName)
     {
         if (forceFullFormat)
         {
-            label.append(trUtf8("DPad")).append(" ");
+            label.append(tr("DPad")).append(" ");
         }
 
-        label.append(getDpadName());
+        label.append(dpadName);
     }
-    else if (!getDefaultDpadName().isEmpty())
+    else if (!defaultDPadName.isEmpty())
     {
         if (forceFullFormat)
         {
-            label.append(trUtf8("DPad")).append(" ");
+            label.append(tr("DPad")).append(" ");
         }
 
-        label.append(getDefaultDpadName());
+        label.append(defaultDPadName);
     }
     else
     {
-        label.append(trUtf8("DPad")).append(" ");
+        label.append(tr("DPad")).append(" ");
         label.append(QString::number(getRealJoyNumber()));
     }
 
     return label;
 }
 
-
 QString GameControllerDPad::getXmlName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::GameControllerDPad::xmlName;
+    return this->xmlName;
 }
-
 
 void GameControllerDPad::readJoystickConfig(QXmlStreamReader *xml)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (xml->isStartElement() && (xml->name() == GlobalVariables::VDPad::xmlName))
+    if (xml->isStartElement() && xml->name() == VDPad::xmlName)
     {
         xml->readNextStartElement();
-
-        while (!xml->atEnd() && (!xml->isEndElement() && (xml->name() != GlobalVariables::VDPad::xmlName)))
+        while (!xml->atEnd() && (!xml->isEndElement() && xml->name() != VDPad::xmlName))
         {
             bool found = readMainConfig(xml);
-
             if (!found)
             {
                 xml->skipCurrentElement();

@@ -22,21 +22,16 @@
 #include <QTimer>
 #include <QTime>
 #include <QList>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 #include "joybuttontypes/joyaxisbutton.h"
 
 class JoyControlStick;
-class SetJoystick;
-class JoyAxisButton;
-class QXmlStreamReader;
-class QXmlStreamWriter;
-class JoyAxis;
-
 
 class JoyAxis : public QObject
 {
     Q_OBJECT
-
 public:
     explicit JoyAxis(int index, int originset, SetJoystick *parentSet, QObject *parent=0);
     ~JoyAxis();
@@ -54,6 +49,7 @@ public:
     void activatePendingEvent();
     bool hasPendingEvent();
     void clearPendingEvent();
+
     bool inDeadZone(int value);
 
     virtual QString getName(bool forceFullFormat=false, bool displayNames=false);
@@ -117,15 +113,6 @@ public:
 
     double getButtonsEasingDuration();
 
-    void setAxisMinCal(int value);
-    int getAxisMinCal();
-
-    void setAxisMaxCal(int value);
-    int getAxisMaxCal();
-
-    void setAxisCenterCal(int value);
-    int getAxisCenterCal();
-
     virtual QString getAxisName();
     virtual int getDefaultDeadZone();
     virtual int getDefaultMaxZone();
@@ -144,7 +131,6 @@ public:
     int getLastKnownThrottleValue();
     int getLastKnownRawValue();
     int getProperReleaseValue();
-    void setCurrentRawValue(int value);
 
     // Don't use direct assignment but copying from a current axis.
     void copyRawValues(JoyAxis *srcAxis);
@@ -155,36 +141,54 @@ public:
 
     virtual void eventReset();
 
+    // Define default values for many properties.
+    static const int AXISMIN;
+    static const int AXISMAX;
+    static const int AXISDEADZONE;
+    static const int AXISMAXZONE;
     static const ThrottleTypes DEFAULTTHROTTLE;
+
+    static const float JOYSPEED;
+
+    static const QString xmlName;
 
 protected:
     void createDeskEvent(bool ignoresets = false);
     void adjustRange();
     int calculateThrottledValue(int value);
-
+    void setCurrentRawValue(int value);
     void performCalibration(int value);
     void stickPassEvent(int value, bool ignoresets=false, bool updateLastValues=true);
 
     virtual bool readMainConfig(QXmlStreamReader *xml);
     virtual bool readButtonConfig(QXmlStreamReader *xml);
 
+    int index;
+    int deadZone;
+    int maxZoneValue;
+    bool isActive;
+
     JoyAxisButton *paxisbutton;
     JoyAxisButton *naxisbutton;
 
+    bool eventActive;
+    int currentThrottledValue;
+    int currentRawValue;
+    int throttle;
+    JoyAxisButton *activeButton;
+    int originset;
+
+    int currentThrottledDeadValue;
+    JoyControlStick *stick;
     QString axisName;
     QString defaultAxisName;
+    SetJoystick *parentSet;
+    int lastKnownThottledValue;
+    int lastKnownRawValue;
 
-    int throttle;
-    int deadZone;
-    int maxZoneValue;
-    int currentRawValue;
-    int currentThrottledValue;
-    int currentThrottledDeadValue;
-    int m_index;
-    int axis_center_cal;
-    int axis_min_cal;
-    int axis_max_cal;
-
+    int pendingValue;
+    bool pendingEvent;
+    bool pendingIgnoreSets;
     // TODO: CHECK IF PROPERTY IS NEEDED.
     //bool pendingUpdateLastValues;
 
@@ -210,25 +214,6 @@ public slots:
 
     void establishPropertyUpdatedConnection();
     void disconnectPropertyUpdatedConnection();
-
-private:
-    bool isActive;
-    bool eventActive;
-
-    JoyAxisButton *activeButton;
-    int m_originset;
-
-    JoyControlStick *m_stick;
-
-    SetJoystick *m_parentSet;
-    int lastKnownThottledValue;
-    int lastKnownRawValue;
-
-    int pendingValue;
-    bool pendingEvent;
-    bool pendingIgnoreSets;
-
-    void resetPrivateVars();
 };
 
 #endif // JOYAXIS_H

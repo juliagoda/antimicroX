@@ -15,25 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joystickstatuswindow.h"
-#include "ui_joystickstatuswindow.h"
-
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "joybuttonstatusbox.h"
-#include "inputdevice.h"
-#include "common.h"
-#include "joydpad.h"
-#include "joybuttontypes/joydpadbutton.h"
-
-#include <QDebug>
+//#include <QDebug>
 #include <QProgressBar>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
 #include <QSpacerItem>
-#include <QWidget>
+
+#include "joystickstatuswindow.h"
+#include "ui_joystickstatuswindow.h"
+#include "joybuttonstatusbox.h"
 
 
 JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *parent) :
@@ -41,15 +33,13 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
     ui(new Ui::JoystickStatusWindow)
 {
     ui->setupUi(this);
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
     setAttribute(Qt::WA_DeleteOnClose);
 
     this->joystick = joystick;
 
     PadderCommon::inputDaemonMutex.lock();
 
-    setWindowTitle(trUtf8("%1 (#%2) Properties").arg(joystick->getSDLName())
+    setWindowTitle(tr("%1 (#%2) Properties").arg(joystick->getSDLName())
                    .arg(joystick->getRealJoyNumber()));
 
     ui->joystickNameLabel->setText(joystick->getSDLName());
@@ -64,19 +54,19 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
 
     QVBoxLayout *axesBox = new QVBoxLayout();
     axesBox->setSpacing(4);
-    for (int i = 0; i < joystick->getNumberAxes(); i++)
+    for (int i=0; i < joystick->getNumberAxes(); i++)
     {
         JoyAxis *axis = joystick->getActiveSetJoystick()->getJoyAxis(i);
 
-        if (axis != nullptr)
+        if (axis)
         {
             QHBoxLayout *hbox = new QHBoxLayout();
 
             QLabel *axisLabel = new QLabel();
-            axisLabel->setText(trUtf8("Axis %1").arg(axis->getRealJoyIndex()));
+            axisLabel->setText(tr("Axis %1").arg(axis->getRealJoyIndex()));
             QProgressBar *axisBar = new QProgressBar();
-            axisBar->setMinimum(GlobalVariables::JoyAxis::AXISMIN);
-            axisBar->setMaximum(GlobalVariables::JoyAxis::AXISMAX);
+            axisBar->setMinimum(JoyAxis::AXISMIN);
+            axisBar->setMaximum(JoyAxis::AXISMAX);
             axisBar->setFormat("%v");
             axisBar->setValue(axis->getCurrentRawValue());
             hbox->addWidget(axisLabel);
@@ -84,7 +74,7 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
             hbox->addSpacing(10);
             axesBox->addLayout(hbox);
 
-            connect(axis, &JoyAxis::moved, axisBar, &QProgressBar::setValue);
+            connect(axis, SIGNAL(moved(int)), axisBar, SLOT(setValue(int)));
         }
     }
 
@@ -99,7 +89,7 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
     for (int i=0; i < joystick->getNumberButtons(); i++)
     {
         JoyButton *button = joystick->getActiveSetJoystick()->getJoyButton(i);
-        if (button != nullptr)
+        if (button)
         {
             JoyButtonStatusBox *statusbox = new JoyButtonStatusBox(button);
             statusbox->setSizePolicy(QSizePolicy::Expanding,
@@ -119,15 +109,15 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
 
     QVBoxLayout *hatsBox = new QVBoxLayout();
     hatsBox->setSpacing(4);
-    for (int i = 0; i < joystick->getNumberHats(); i++)
+    for (int i=0; i < joystick->getNumberHats(); i++)
     {
         JoyDPad *dpad = joystick->getActiveSetJoystick()->getJoyDPad(i);
-        if (dpad != nullptr)
+        if (dpad)
         {
             QHBoxLayout *hbox = new QHBoxLayout();
 
             QLabel *dpadLabel = new QLabel();
-            dpadLabel->setText(trUtf8("Hat %1").arg(dpad->getRealJoyNumber()));
+            dpadLabel->setText(tr("Hat %1").arg(dpad->getRealJoyNumber()));
             QProgressBar *dpadBar = new QProgressBar();
             dpadBar->setMinimum(JoyDPadButton::DpadCentered);
             dpadBar->setMaximum(JoyDPadButton::DpadLeftDown);
@@ -138,8 +128,8 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
             hbox->addSpacing(10);
             hatsBox->addLayout(hbox);
 
-            connect(dpad, &JoyDPad::active, dpadBar, &QProgressBar::setValue);
-            connect(dpad, &JoyDPad::released, dpadBar, &QProgressBar::setValue);
+            connect(dpad, SIGNAL(active(int)), dpadBar, SLOT(setValue(int)));
+            connect(dpad, SIGNAL(released(int)), dpadBar, SLOT(setValue(int)));
         }
     }
 
@@ -165,31 +155,32 @@ JoystickStatusWindow::JoystickStatusWindow(InputDevice *joystick, QWidget *paren
         ui->guidLabel->hide();
     }
 
-    QString usingGameController = trUtf8("No");
+#ifdef USE_SDL_2
+    QString usingGameController = tr("No");
     if (joystick->isGameController())
     {
-        usingGameController = trUtf8("Yes");
+        usingGameController = tr("Yes");
     }
 
     ui->sdlGameControllerLabel->setText(usingGameController);
+#else
+    ui->sdlcontrollerHeaderLabel->setVisible(false);
+    ui->sdlGameControllerLabel->setVisible(false);
+#endif
 
     PadderCommon::inputDaemonMutex.unlock();
 
-    connect(joystick, &InputDevice::destroyed, this, &JoystickStatusWindow::obliterate);
-    connect(this, &JoystickStatusWindow::finished, this, &JoystickStatusWindow::restoreButtonStates);
+    connect(joystick, SIGNAL(destroyed()), this, SLOT(obliterate()));
+    connect(this, SIGNAL(finished(int)), this, SLOT(restoreButtonStates(int)));
 }
 
 JoystickStatusWindow::~JoystickStatusWindow()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     delete ui;
 }
 
 void JoystickStatusWindow::restoreButtonStates(int code)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (code == QDialogButtonBox::AcceptRole)
     {
         PadderCommon::inputDaemonMutex.lock();
@@ -203,12 +194,5 @@ void JoystickStatusWindow::restoreButtonStates(int code)
 
 void JoystickStatusWindow::obliterate()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->done(QDialogButtonBox::DestructiveRole);
-}
-
-InputDevice* JoystickStatusWindow::getJoystick() const {
-
-    return joystick;
 }

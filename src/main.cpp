@@ -15,70 +15,69 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mainwindow.h"
-#include "inputdevice.h"
-#include "setjoystick.h"
-#include "simplekeygrabberbutton.h"
-#include "joybuttonslot.h"
-#include "inputdaemon.h"
-#include "common.h"
-#include "commandlineutility.h"
-#include "autoprofileinfo.h"
-#include "localantimicroserver.h"
-#include "antimicrosettings.h"
-#include "applaunchhelper.h"
-#include "antkeymapper.h"
+#include <QtGlobal>
 
-#include "eventhandlerfactory.h"
-#include "messagehandler.h"
-#include "logger.h"
+#ifdef Q_OS_WIN
+  #ifdef USE_SDL_2
+  #include <SDL2/SDL.h>
+  #else
+  #include <SDL/SDL.h>
+  #endif
+  #undef main
+#endif
 
 #include <QApplication>
-#include <QtGlobal>
 #include <QMainWindow>
 #include <QMap>
 #include <QMapIterator>
 #include <QDir>
-#include <QDebug>
+//#include <QDebug>
 #include <QTranslator>
 #include <QLibraryInfo>
 #include <QTextStream>
 #include <QLocalSocket>
 #include <QSettings>
 #include <QThread>
-#include <QCommandLineParser>
-
-#ifdef Q_OS_UNIX
-    #include <signal.h>
-    #include <unistd.h>
-
-    #include <sys/types.h>
-    #include <sys/stat.h>
-
-      #ifdef WITH_X11
-        #include "x11extras.h"
-      #endif
-
-#endif
 
 #ifdef Q_OS_WIN
-  #include <SDL2/SDL.h>
-  #undef main
+#include <QStyle>
+#include <QStyleFactory>
+#include "winextras.h"
+
 #endif
 
-#ifdef Q_OS_WIN
-    #include "winextras.h"
-    #include <QStyle>
-    #include <QStyleFactory>
+#include "inputdevice.h"
+#include "joybuttonslot.h"
+#include "inputdaemon.h"
+#include "common.h"
+#include "commandlineutility.h"
+#include "mainwindow.h"
+#include "autoprofileinfo.h"
+#include "localantimicroserver.h"
+#include "antimicrosettings.h"
+#include "applaunchhelper.h"
+
+#include "eventhandlerfactory.h"
+
+#ifndef Q_OS_WIN
+#include <signal.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+  #ifdef WITH_X11
+    #include "x11extras.h"
+  #endif
+
 #endif
 
-
+#include "antkeymapper.h"
+#include "logger.h"
 
 #ifndef Q_OS_WIN
 static void termSignalTermHandler(int signal)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(signal);
 
     qApp->exit(0);
@@ -86,8 +85,6 @@ static void termSignalTermHandler(int signal)
 
 static void termSignalIntHandler(int signal)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(signal);
 
     qApp->exit(0);
@@ -95,20 +92,17 @@ static void termSignalIntHandler(int signal)
 
 #endif
 
-// was non static
-static void deleteInputDevices(QMap<SDL_JoystickID, InputDevice*> *joysticks)
+void deleteInputDevices(QMap<SDL_JoystickID, InputDevice*> *joysticks)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QMapIterator<SDL_JoystickID, InputDevice*> iter(*joysticks);
 
     while (iter.hasNext())
     {
         InputDevice *joystick = iter.next().value();
-        if (joystick != nullptr)
+        if (joystick)
         {
             delete joystick;
-            joystick = nullptr;
+            joystick = 0;
         }
     }
 
@@ -117,12 +111,6 @@ static void deleteInputDevices(QMap<SDL_JoystickID, InputDevice*> *joysticks)
 
 int main(int argc, char *argv[])
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QApplication antimicro(argc, argv);
-    QCoreApplication::setApplicationName("antimicro");
-    QCoreApplication::setApplicationVersion(PadderCommon::programVersion);
-
     qRegisterMetaType<JoyButtonSlot*>();
     qRegisterMetaType<SetJoystick*>();
     qRegisterMetaType<InputDevice*>();
@@ -132,16 +120,19 @@ int main(int argc, char *argv[])
     qRegisterMetaType<JoyButtonSlot::JoySlotInputAction>("JoyButtonSlot::JoySlotInputAction");
 
 #if defined(Q_OS_UNIX) && defined(WITH_X11)
-
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     if (QApplication::platformName() == QStringLiteral("xcb"))
     {
-        XInitThreads();
+    #endif
+    XInitThreads();
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     }
-
+    #endif
 #endif
 
     QFile logFile;
     QTextStream logFileStream;
+    
     QTextStream outstream(stdout);
     QTextStream errorstream(stderr);
 
@@ -150,11 +141,10 @@ int main(int argc, char *argv[])
     // of it.
 #ifdef Q_OS_WIN
     bool styleChangeFound = false;
-    for (int i=0; (i < argc) && !styleChangeFound; i++)
+    for (int i=0; i < argc && !styleChangeFound; i++)
     {
         char *tempchrstr = argv[i];
         QString temp = QString::fromUtf8(tempchrstr);
-
         if (temp == "-style")
         {
             styleChangeFound = true;
@@ -162,100 +152,61 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    QCommandLineParser parser;
-    parser.setApplicationDescription(QCoreApplication::translate("antimicro", "Graphical program used to map keyboard buttons and mouse controls to a gamepad. Useful for playing games with no gamepad support."));
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.addOptions({
-            // A boolean option with a single name (-p)
-            {"tray",
-                QCoreApplication::translate("main", "Launch program in system tray only.")},
-            // A boolean option with multiple names (-f, --force)
-            {"no-tray",
-                QCoreApplication::translate("main", "Launch program with the tray menu disabled")},
-            // An option with a value
-            {"hidden",
-                QCoreApplication::translate("main", "Launch program without the main window displayed")},
-            {"profile",
-                QCoreApplication::translate("main", "Launch program with the configuration file selected as the default for selected controllers. Defaults to all controllers"),
-                QCoreApplication::translate("main", "location")},
-            {"profile-controller",
-                QCoreApplication::translate("main", "Apply configuration file to a specific controller. Value can be a controller index, name, or GUID"),
-                QCoreApplication::translate("main", "value")},
-            {"unload",
-                QCoreApplication::translate("main", "Unload currently enabled profile(s)"),
-                QCoreApplication::translate("main", "value(s)")},
-            {"startSet",
-                QCoreApplication::translate("main", "Start joysticks on a specific set. Value can be a controller index, name, or GUID"),
-                QCoreApplication::translate("main", "number value")},
-            {{"daemon","d"},
-                QCoreApplication::translate("main", "Launch program as a daemon. Use only on Linux.")},
-            {"log-level",
-                QCoreApplication::translate("main", "Enable logging"),
-                QCoreApplication::translate("main", "log-type")},
-            {"log-file",
-                QCoreApplication::translate("main", "Choose a file for logs writing"),
-                QCoreApplication::translate("main", "filename")},
-            {"eventgen",
-                QCoreApplication::translate("main", "Choose between using XTest support and uinput support for event generation. Use only if you have enabled xtest and uinput options on Linux or vmulti on Windows. Default: xtest."),
-                QCoreApplication::translate("main", "event-generation-type"),
-                "xtest"}, // default
-            {{"list","l"},
-                QCoreApplication::translate("main", "Print information about joysticks detected by SDL. Use only if you have sdl library. You can check your controller index, name or even GUID.")},
-           // {"display",
-           //     QCoreApplication::translate("main", "Use specified display for X11 calls")},
-           // {"next",
-           //     QCoreApplication::translate("main", "Advance profile loading set options")},
-          //  {"map",
-          //      QCoreApplication::translate("main", "Open game controller mapping window of selected controller. Value can be a controller index or GUID."),
-          //      QCoreApplication::translate("main", "value")},
-        });
-
-
-    parser.process(antimicro);
-
     CommandLineUtility cmdutility;
-    cmdutility.parseArguments(&parser);
+    QStringList cmdarguments = PadderCommon::arguments(argc, argv);
+    cmdarguments.removeFirst();
+    cmdutility.parseArguments(cmdarguments);
 
     Logger appLogger(&outstream, &errorstream);
 
-    // If a log level wasn't specified at the command-line, then use a default.
-    if( cmdutility.getCurrentLogLevel() == Logger::LOG_NONE )
+    if (cmdutility.hasError())
     {
-        appLogger.setLogLevel( Logger::LOG_WARNING );
+        appLogger.LogError(cmdutility.getErrorText(), true, true);
+        return 1;
     }
-    else if (cmdutility.getCurrentLogLevel() != appLogger.getCurrentLogLevel())
+    else if (cmdutility.isHelpRequested())
+    {
+        appLogger.LogInfo(cmdutility.generateHelpString(), false, true);
+        return 0;
+    }
+    else if (cmdutility.isVersionRequested())
+    {
+        appLogger.LogInfo(cmdutility.generateVersionString(), true, true);
+        return 0;
+    }
+
+    // If a log level wasn't specified at the command-line, then use a default.
+    if( cmdutility.getCurrentLogLevel() == Logger::LOG_NONE ) {
+      appLogger.setLogLevel( Logger::LOG_WARNING );
+    } else if (cmdutility.getCurrentLogLevel() != appLogger.getCurrentLogLevel())
     {
         appLogger.setLogLevel(cmdutility.getCurrentLogLevel());
     }
 
     if( !cmdutility.getCurrentLogFile().isEmpty() ) {
-
-          appLogger.setCurrentLogFile( cmdutility.getCurrentLogFile() );
-          appLogger.setCurrentErrorStream(nullptr);
-
+      appLogger.setCurrentLogFile( cmdutility.getCurrentLogFile() );
+      appLogger.setCurrentErrorStream(NULL);
     }
 
     Q_INIT_RESOURCE(resources);
 
+    QApplication a(argc, argv);
 
 #if defined(Q_OS_WIN) && defined(WIN_PORTABLE_PACKAGE)
-
     // If in portable mode, make sure the current directory is the same as the
     // config directory. This is to ensure that all relative paths resolve
     // correctly when loading on startup.
-
     QDir::setCurrent( PadderCommon::configPath() );
 #endif
 
     QDir configDir(PadderCommon::configPath());
     if (!configDir.exists())
     {
-        configDir.mkpath(PadderCommon::configPath());
+      configDir.mkpath(PadderCommon::configPath());
     }
 
     QMap<SDL_JoystickID, InputDevice*> *joysticks = new QMap<SDL_JoystickID, InputDevice*>();
-    QThread *inputEventThread = nullptr;
+    QThread *inputEventThread = 0;
 
     // Cross-platform way of performing IPC. Currently,
     // only establish a connection and then disconnect.
@@ -264,152 +215,164 @@ int main(int argc, char *argv[])
     QLocalSocket socket;
     socket.connectToServer(PadderCommon::localSocketKey);
     socket.waitForConnected(1000);
-
     if (socket.state() == QLocalSocket::ConnectedState)
     {
         // An instance of this program is already running.
         // Save app config and exit.
         AntiMicroSettings settings(PadderCommon::configFilePath(), QSettings::IniFormat);
 	
-        // Update log info based on config values
-        if( cmdutility.getCurrentLogLevel() == Logger::LOG_NONE &&
-            settings.contains("LogLevel")) {
-
-            appLogger.setLogLevel( static_cast<Logger::LogLevel>(settings.value("LogLevel").toInt()) );
-        }
-
-        if( cmdutility.getCurrentLogFile().isEmpty() &&
-            settings.contains("LogFile")) {
-
-            appLogger.setCurrentLogFile( settings.value("LogFile").toString() );
-            appLogger.setCurrentErrorStream(nullptr);
-        }
+	// Update log info based on config values
+	if( cmdutility.getCurrentLogLevel() == Logger::LOG_NONE &&
+	    settings.contains("LogLevel")) {
+	  appLogger.setLogLevel( (Logger::LogLevel) settings.value("LogLevel").toInt() );
+	}
+	if( cmdutility.getCurrentLogFile().isEmpty() &&
+	    settings.contains("LogFile")) {
+	  appLogger.setCurrentLogFile( settings.value("LogFile").toString() );
+	  appLogger.setCurrentErrorStream(NULL);
+	}
 
         InputDaemon *joypad_worker = new InputDaemon(joysticks, &settings, false);
-        MainWindow mainWindow(joysticks, &cmdutility, &settings, false);
-        mainWindow.fillButtons();
-        mainWindow.alterConfigFromSettings();
+        MainWindow w(joysticks, &cmdutility, &settings, false);
+        w.fillButtons();
+        w.alterConfigFromSettings();
 
         if (!cmdutility.hasError() &&
            (cmdutility.hasProfile() || cmdutility.hasProfileInOptions()))
         {
-            mainWindow.saveAppConfig();
+            w.saveAppConfig();
         }
         else if (!cmdutility.hasError() && cmdutility.isUnloadRequested())
         {
-            mainWindow.saveAppConfig();
+            w.saveAppConfig();
         }
 
-        mainWindow.removeJoyTabs();
-        QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker, &InputDaemon::quit);
-        QTimer::singleShot(50, &antimicro, &QApplication::quit);
+        w.removeJoyTabs();
+        QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker, SLOT(quit()));
+        QTimer::singleShot(50, &a, SLOT(quit()));
 
-        int result = antimicro.exec();
+        int result = a.exec();
 
         settings.sync();
         socket.disconnectFromServer();
-        deleteInputDevices(joysticks);
 
+        deleteInputDevices(joysticks);
         delete joysticks;
-        joysticks = nullptr;
+        joysticks = 0;
 
         delete joypad_worker;
-        joypad_worker = nullptr;
+        joypad_worker = 0;
 
         return result;
     }
 
-    LocalAntiMicroServer *localServer = nullptr;
+    LocalAntiMicroServer *localServer = 0;
 
-#ifdef Q_OS_UNIX
+#ifndef Q_OS_WIN
     if (cmdutility.launchAsDaemon())
     {
         pid_t pid, sid;
-        pid = fork(); // Fork the Parent Process
+
+        //Fork the Parent Process
+        pid = fork();
 
         if (pid == 0)
         {
-            appLogger.LogInfo(QObject::trUtf8("Daemon launched"), true, true);
+            appLogger.LogInfo(QObject::tr("Daemon launched"), true, true);
 
             localServer = new LocalAntiMicroServer();
             localServer->startLocalServer();
         }
         else if (pid < 0)
         {
-            appLogger.LogError(QObject::trUtf8("Failed to launch daemon"), true, true);
+            appLogger.LogError(QObject::tr("Failed to launch daemon"), true, true);
 
             deleteInputDevices(joysticks);
             delete joysticks;
-            joysticks = nullptr;
+            joysticks = 0;
 
             exit(EXIT_FAILURE);
         }
-        else if (pid > 0) // We got a good pid, Close the Parent Process
+        //We got a good pid, Close the Parent Process
+        else if (pid > 0)
         {
-            appLogger.LogInfo(QObject::trUtf8("Launching daemon"), true, true);
+            appLogger.LogInfo(QObject::tr("Launching daemon"), true, true);
 
             deleteInputDevices(joysticks);
             delete joysticks;
-            joysticks = nullptr;
+            joysticks = 0;
 
             exit(EXIT_SUCCESS);
         }
 
 
     #ifdef WITH_X11
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
         if (QApplication::platformName() == QStringLiteral("xcb"))
         {
+        #endif
 
-            if (cmdutility.getDisplayString().isEmpty())
+        if (cmdutility.getDisplayString().isEmpty())
+        {
+            X11Extras::getInstance()->syncDisplay();
+        }
+        else
+        {
+            X11Extras::setCustomDisplay(cmdutility.getDisplayString());
+            X11Extras::getInstance()->syncDisplay();
+            if (X11Extras::getInstance()->display() == NULL)
             {
-                X11Extras::getInstance()->syncDisplay();
-            }
-            else
-            {
-                X11Extras::setCustomDisplay(cmdutility.getDisplayString());
-                X11Extras::getInstance()->syncDisplay();
+                appLogger.LogError(QObject::tr("Display string \"%1\" is not valid.")
+                                   .arg(cmdutility.getDisplayString()), true, true);
+                //errorstream << QObject::tr("Display string \"%1\" is not valid.").arg(cmdutility.getDisplayString()) << endl;
 
-                if (X11Extras::getInstance()->display() == nullptr)
-                {
-                    appLogger.LogError(QObject::trUtf8("Display string \"%1\" is not valid.")
-                                       .arg(cmdutility.getDisplayString()), true, true);
+                deleteInputDevices(joysticks);
+                delete joysticks;
+                joysticks = 0;
 
-                    deleteInputDevices(joysticks);
-                    delete joysticks;
-                    joysticks = nullptr;
+                delete localServer;
+                localServer = 0;
 
-                    delete localServer;
-                    localServer = nullptr;
+                X11Extras::getInstance()->closeDisplay();
 
-                    X11Extras::getInstance()->closeDisplay();
-
-                    exit(EXIT_FAILURE);
-                }
+                exit(EXIT_FAILURE);
             }
         }
 
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+        }
+        #endif
+
     #endif
 
-        umask(0); //Change File Mask
-        sid = setsid(); //Create a new Signature Id for our child
+        //Change File Mask
+        umask(0);
 
+        //Create a new Signature Id for our child
+        sid = setsid();
         if (sid < 0)
         {
-            appLogger.LogError(QObject::trUtf8("Failed to set a signature id for the daemon"), true, true);
+            appLogger.LogError(QObject::tr("Failed to set a signature id for the daemon"), true, true);
+            //errorstream << QObject::tr("Failed to set a signature id for the daemon") << endl;
 
             deleteInputDevices(joysticks);
             delete joysticks;
-            joysticks = nullptr;
+            joysticks = 0;
 
             delete localServer;
-            localServer = nullptr;
+            localServer = 0;
 
     #ifdef WITH_X11
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             if (QApplication::platformName() == QStringLiteral("xcb"))
             {
-                X11Extras::getInstance()->closeDisplay();
+        #endif
+            X11Extras::getInstance()->closeDisplay();
+
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             }
+        #endif
     #endif
 
             exit(EXIT_FAILURE);
@@ -417,21 +380,25 @@ int main(int argc, char *argv[])
 
         if ((chdir("/")) < 0)
         {
-            appLogger.LogError(QObject::trUtf8("Failed to change working directory to /"), true, true);
+            appLogger.LogError(QObject::tr("Failed to change working directory to /"), true, true);
 
             deleteInputDevices(joysticks);
             delete joysticks;
-            joysticks = nullptr;
+            joysticks = 0;
 
             delete localServer;
-            localServer = nullptr;
+            localServer = 0;
 
     #ifdef WITH_X11
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
             if (QApplication::platformName() == QStringLiteral("xcb"))
             {
-                X11Extras::getInstance()->closeDisplay();
+        #endif
+            X11Extras::getInstance()->closeDisplay();
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             }
+        #endif
     #endif
 
             exit(EXIT_FAILURE);
@@ -448,40 +415,46 @@ int main(int argc, char *argv[])
         localServer->startLocalServer();
 
     #ifdef WITH_X11
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
         if (QApplication::platformName() == QStringLiteral("xcb"))
         {
-            if (!cmdutility.getDisplayString().isEmpty())
+        #endif
+        if (!cmdutility.getDisplayString().isEmpty())
+        {
+            X11Extras::getInstance()->syncDisplay(cmdutility.getDisplayString());
+            if (X11Extras::getInstance()->display() == NULL)
             {
-                X11Extras::getInstance()->syncDisplay(cmdutility.getDisplayString());
-                if (X11Extras::getInstance()->display() == nullptr)
-                {
-                    appLogger.LogError(QObject::trUtf8("Display string \"%1\" is not valid.")
-                                       .arg(cmdutility.getDisplayString()), true, true);
+                appLogger.LogError(QObject::tr("Display string \"%1\" is not valid.")
+                                   .arg(cmdutility.getDisplayString()), true, true);
 
-                    deleteInputDevices(joysticks);
-                    delete joysticks;
-                    joysticks = nullptr;
+                deleteInputDevices(joysticks);
+                delete joysticks;
+                joysticks = 0;
 
-                    delete localServer;
-                    localServer = nullptr;
+                delete localServer;
+                localServer = 0;
 
-                    X11Extras::getInstance()->closeDisplay();
+                X11Extras::getInstance()->closeDisplay();
 
-                    exit(EXIT_FAILURE);
-                }
+                exit(EXIT_FAILURE);
             }
         }
 
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+        }
+        #endif
     #endif
     }
 
-#elif defined(Q_OS_WIN)
+#else
     localServer = new LocalAntiMicroServer();
     localServer->startLocalServer();
 #endif
 
-    antimicro.setQuitOnLastWindowClosed(false);
+    a.setQuitOnLastWindowClosed(false);
+
+    //QString defaultStyleName = qApp->style()->objectName();
 
     // If running Win version and no explicit style was
     // defined, use the style Fusion by default. I find the
@@ -501,16 +474,13 @@ int main(int argc, char *argv[])
 
     // Update log info based on config values
     if( cmdutility.getCurrentLogLevel() == Logger::LOG_NONE &&
-        settings->contains("LogLevel")) {
-
-        appLogger.setLogLevel( static_cast<Logger::LogLevel>(settings->value("LogLevel").toInt()) );
+	settings->contains("LogLevel")) {
+      appLogger.setLogLevel( (Logger::LogLevel)settings->value("LogLevel").toInt() );
     }
-
     if( cmdutility.getCurrentLogFile().isEmpty() &&
-        settings->contains("LogFile")) {
-
-        appLogger.setCurrentLogFile( settings->value("LogFile").toString() );
-        appLogger.setCurrentErrorStream(nullptr);
+	settings->contains("LogFile")) {
+      appLogger.setCurrentLogFile( settings->value("LogFile").toString() );
+      appLogger.setCurrentErrorStream(NULL);
     }
 
     QString targetLang = QLocale::system().name();
@@ -520,7 +490,6 @@ int main(int argc, char *argv[])
     }
 
     QTranslator qtTranslator;
-
 #if defined(Q_OS_UNIX)
     qtTranslator.load(QString("qt_").append(targetLang), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
 #elif defined(Q_OS_WIN)
@@ -531,16 +500,15 @@ int main(int argc, char *argv[])
                       QApplication::applicationDirPath().append("\\share\\qt\\translations"));
   #endif
 #endif
-    antimicro.installTranslator(&qtTranslator);
+    a.installTranslator(&qtTranslator);
 
     QTranslator myappTranslator;
-
 #if defined(Q_OS_UNIX)
     myappTranslator.load(QString("antimicro_").append(targetLang), QApplication::applicationDirPath().append("/../share/antimicro/translations"));
 #elif defined(Q_OS_WIN)
     myappTranslator.load(QString("antimicro_").append(targetLang), QApplication::applicationDirPath().append("\\share\\antimicro\\translations"));
 #endif
-    antimicro.installTranslator(&myappTranslator);
+    a.installTranslator(&myappTranslator);
 
 #ifndef Q_OS_WIN
     // Have program handle SIGTERM
@@ -549,7 +517,7 @@ int main(int argc, char *argv[])
     sigemptyset(&termaction.sa_mask);
     termaction.sa_flags = 0;
 
-    sigaction(SIGTERM, &termaction, nullptr);
+    sigaction(SIGTERM, &termaction, 0);
 
     // Have program handle SIGINT
     struct sigaction termint;
@@ -557,7 +525,7 @@ int main(int argc, char *argv[])
     sigemptyset(&termint.sa_mask);
     termint.sa_flags = 0;
 
-    sigaction(SIGINT, &termint, nullptr);
+    sigaction(SIGINT, &termint, 0);
 
 #endif
 
@@ -571,44 +539,50 @@ int main(int argc, char *argv[])
         joypad_worker->deleteJoysticks();
 
         delete joysticks;
-        joysticks = nullptr;
+        joysticks = 0;
 
         delete joypad_worker;
-        joypad_worker = nullptr;
+        joypad_worker = 0;
 
         delete localServer;
-        localServer = nullptr;
+        localServer = 0;
 
     #ifdef WITH_X11
-
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         if (QApplication::platformName() == QStringLiteral("xcb"))
         {
-            X11Extras::getInstance()->closeDisplay();
+        #endif
+        X11Extras::getInstance()->closeDisplay();
+        #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         }
-
+        #endif
     #endif
 
         return 0;
     }
+
+#ifdef USE_SDL_2
     else if (cmdutility.shouldMapController())
     {
         PadderCommon::mouseHelperObj.initDeskWid();
         InputDaemon *joypad_worker = new InputDaemon(joysticks, settings);
-        inputEventThread = new QThread;
+        inputEventThread = new QThread();
 
-        MainWindow *mainWindow = new MainWindow(joysticks, &cmdutility, settings);
 
-        QObject::connect(&antimicro, &QApplication::aboutToQuit, mainWindow, &MainWindow::removeJoyTabs);
-        QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker, &InputDaemon::quit);
-        QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker,
-                         &InputDaemon::deleteJoysticks, Qt::BlockingQueuedConnection);
-        QObject::connect(&antimicro, &QApplication::aboutToQuit, &PadderCommon::mouseHelperObj,
-                         &MouseHelper::deleteDeskWid, Qt::DirectConnection);
-        QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker, &InputDaemon::deleteLater,
+        MainWindow *w = new MainWindow(joysticks, &cmdutility, settings);
+
+        QObject::connect(&a, SIGNAL(aboutToQuit()), w, SLOT(removeJoyTabs()));
+        QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker, SLOT(quit()));
+        QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker,
+                         SLOT(deleteJoysticks()), Qt::BlockingQueuedConnection);
+        QObject::connect(&a, SIGNAL(aboutToQuit()), &PadderCommon::mouseHelperObj,
+                         SLOT(deleteDeskWid()), Qt::DirectConnection);
+        QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker, SLOT(deleteLater()),
                          Qt::BlockingQueuedConnection);
 
-        mainWindow->makeJoystickTabs();
-        QTimer::singleShot(0, mainWindow, &MainWindow::controllerMapOpening);
+        //JoyButton::establishMouseTimerConnections();
+        w->makeJoystickTabs();
+        QTimer::singleShot(0, w, SLOT(controllerMapOpening()));
 
         joypad_worker->startWorker();
 
@@ -616,49 +590,48 @@ int main(int argc, char *argv[])
         PadderCommon::mouseHelperObj.moveToThread(inputEventThread);
         inputEventThread->start(QThread::HighPriority);
 
+        int app_result = a.exec();
 
-
-        int app_result = antimicro.exec();
-
-
-
-
-        appLogger.Log(); // Log any remaining messages if they exist.
+        // Log any remaining messages if they exist.
+        appLogger.Log();
 
         inputEventThread->quit();
         inputEventThread->wait();
 
         delete joysticks;
-        joysticks = nullptr;
+        joysticks = 0;
 
-        joypad_worker = nullptr;
+        //delete joypad_worker;
+        joypad_worker = 0;
 
         delete localServer;
-        localServer = nullptr;
+        localServer = 0;
 
         delete inputEventThread;
-        inputEventThread = nullptr;
+        inputEventThread = 0;
 
 #ifdef WITH_X11
-
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         if (QApplication::platformName() == QStringLiteral("xcb"))
         {
-            X11Extras::getInstance()->closeDisplay();
+    #endif
+        X11Extras::getInstance()->closeDisplay();
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         }
-
+    #endif
 #endif
 
-        delete mainWindow;
-        mainWindow = nullptr;
+        delete w;
+        w = 0;
 
         return app_result;
     }
+#endif
 
     bool status = true;
-    QString eventGeneratorIdentifier = QString();
-    AntKeyMapper *keyMapper = nullptr;
+    QString eventGeneratorIdentifier;
+    AntKeyMapper *keyMapper = 0;
     EventHandlerFactory *factory = EventHandlerFactory::getInstance(cmdutility.getEventGenerator());
-
     if (!factory)
     {
         status = false;
@@ -673,24 +646,22 @@ int main(int argc, char *argv[])
 
 #if (defined(Q_OS_UNIX) && defined(WITH_UINPUT) && defined(WITH_XTEST)) || \
      defined(Q_OS_WIN)
-
     // Use fallback event handler.
     if (!status && cmdutility.getEventGenerator() != EventHandlerFactory::fallBackIdentifier())
     {
         QString eventDisplayName = EventHandlerFactory::handlerDisplayName(
                     EventHandlerFactory::fallBackIdentifier());
-        appLogger.LogInfo(QObject::trUtf8("Attempting to use fallback option %1 for event generation.")
+        appLogger.LogInfo(QObject::tr("Attempting to use fallback option %1 for event generation.")
                                      .arg(eventDisplayName));
 
-        if (keyMapper != nullptr)
+        if (keyMapper)
         {
             keyMapper->deleteInstance();
-            keyMapper = nullptr;
+            keyMapper = 0;
         }
 
         factory->deleteInstance();
         factory = EventHandlerFactory::getInstance(EventHandlerFactory::fallBackIdentifier());
-
         if (!factory)
         {
             status = false;
@@ -707,36 +678,39 @@ int main(int argc, char *argv[])
 
     if (!status)
     {
-        appLogger.LogError(QObject::trUtf8("Failed to open event generator. Exiting."));
+        appLogger.LogError(QObject::tr("Failed to open event generator. Exiting."));
         appLogger.Log();
 
         deleteInputDevices(joysticks);
         delete joysticks;
-        joysticks = nullptr;
+        joysticks = 0;
 
         delete localServer;
-        localServer = nullptr;
+        localServer = 0;
 
-        if (keyMapper != nullptr)
+        if (keyMapper)
         {
             keyMapper->deleteInstance();
-            keyMapper = nullptr;
+            keyMapper = 0;
         }
 
 #if defined(Q_OS_UNIX) && defined(WITH_X11)
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
         if (QApplication::platformName() == QStringLiteral("xcb"))
         {
-            X11Extras::getInstance()->closeDisplay();
+  #endif
+        X11Extras::getInstance()->closeDisplay();
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         }
-
+  #endif
 #endif
 
         return EXIT_FAILURE;
     }
     else
     {
-        appLogger.LogInfo(QObject::trUtf8("Using %1 as the event generator.")
+        appLogger.LogInfo(QObject::tr("Using %1 as the event generator.")
                           .arg(factory->handler()->getName()));
     }
 
@@ -744,62 +718,61 @@ int main(int argc, char *argv[])
     InputDaemon *joypad_worker = new InputDaemon(joysticks, settings);
     inputEventThread = new QThread();
 
-    MainWindow *mainWindow = new MainWindow(joysticks, &cmdutility, settings);
+    MainWindow *w = new MainWindow(joysticks, &cmdutility, settings);
 
+    w->setAppTranslator(&qtTranslator);
+    w->setTranslator(&myappTranslator);
 
-    mainWindow->setAppTranslator(&qtTranslator);
-    mainWindow->setTranslator(&myappTranslator);
+    AppLaunchHelper mainAppHelper(settings, w->getGraphicalStatus());
 
-    AppLaunchHelper mainAppHelper(settings, mainWindow->getGraphicalStatus());
-
-    QObject::connect(mainWindow, &MainWindow::joystickRefreshRequested, joypad_worker, &InputDaemon::refresh);
+    QObject::connect(w, SIGNAL(joystickRefreshRequested()), joypad_worker, SLOT(refresh()));
     QObject::connect(joypad_worker, SIGNAL(joystickRefreshed(InputDevice*)),
-                     mainWindow, SLOT(fillButtons(InputDevice*)));
+                     w, SLOT(fillButtons(InputDevice*)));
     QObject::connect(joypad_worker,
                      SIGNAL(joysticksRefreshed(QMap<SDL_JoystickID, InputDevice*>*)),
-                     mainWindow, SLOT(fillButtons(QMap<SDL_JoystickID, InputDevice*>*)));
+                     w, SLOT(fillButtons(QMap<SDL_JoystickID, InputDevice*>*)));
 
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, localServer, &LocalAntiMicroServer::close);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, mainWindow, &MainWindow::saveAppConfig);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, mainWindow, &MainWindow::removeJoyTabs);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, &mainAppHelper, &AppLaunchHelper::revertMouseThread);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker, &InputDaemon::quit);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker, &InputDaemon::deleteJoysticks);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, joypad_worker, &InputDaemon::deleteLater);
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, &PadderCommon::mouseHelperObj, &MouseHelper::deleteDeskWid,
+    QObject::connect(&a, SIGNAL(aboutToQuit()), localServer, SLOT(close()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), w, SLOT(saveAppConfig()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), w, SLOT(removeJoyTabs()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), &mainAppHelper, SLOT(revertMouseThread()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker, SLOT(quit()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker, SLOT(deleteJoysticks()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), joypad_worker, SLOT(deleteLater()));
+    QObject::connect(&a, SIGNAL(aboutToQuit()), &PadderCommon::mouseHelperObj, SLOT(deleteDeskWid()),
                      Qt::DirectConnection);
 
 #ifdef Q_OS_WIN
-    QObject::connect(&antimicro, &QApplication::aboutToQuit, &mainAppHelper, &AppLaunchHelper::appQuitPointerPrecision);
+    QObject::connect(&a, SIGNAL(aboutToQuit()), &mainAppHelper, SLOT(appQuitPointerPrecision()));
 #endif
-    QObject::connect(localServer, &LocalAntiMicroServer::clientdisconnect, mainWindow, &MainWindow::handleInstanceDisconnect);
-    QObject::connect(mainWindow, &MainWindow::mappingUpdated,
-                     joypad_worker, &InputDaemon::refreshMapping);
-    QObject::connect(joypad_worker, &InputDaemon::deviceUpdated,
-                     mainWindow, &MainWindow::testMappingUpdateNow);
+    QObject::connect(localServer, SIGNAL(clientdisconnect()), w, SLOT(handleInstanceDisconnect()));
 
-    QObject::connect(joypad_worker, &InputDaemon::deviceRemoved,
-                     mainWindow, &MainWindow::removeJoyTab);
-    QObject::connect(joypad_worker, &InputDaemon::deviceAdded,
-                     mainWindow, &MainWindow::addJoyTab);
+#ifdef USE_SDL_2
+    QObject::connect(w, SIGNAL(mappingUpdated(QString,InputDevice*)),
+                     joypad_worker, SLOT(refreshMapping(QString,InputDevice*)));
+    QObject::connect(joypad_worker, SIGNAL(deviceUpdated(int,InputDevice*)),
+                     w, SLOT(testMappingUpdateNow(int,InputDevice*)));
+
+    QObject::connect(joypad_worker, SIGNAL(deviceRemoved(SDL_JoystickID)),
+                     w, SLOT(removeJoyTab(SDL_JoystickID)));
+    QObject::connect(joypad_worker, SIGNAL(deviceAdded(InputDevice*)),
+                     w, SLOT(addJoyTab(InputDevice*)));
+#endif
 
 #ifdef Q_OS_WIN
-
     // Raise process priority. Helps reduce timer delays caused by
     // the running of other processes.
-
     bool raisedPriority = WinExtras::raiseProcessPriority();
     if (!raisedPriority)
     {
-        appLogger.LogInfo(QObject::trUtf8("Could not raise process priority."));
+        appLogger.LogInfo(QObject::tr("Could not raise process priority."));
     }
 #endif
 
     mainAppHelper.initRunMethods();
-    QTimer::singleShot(0, mainWindow, SLOT(fillButtons()));
-    QTimer::singleShot(0, mainWindow, SLOT(alterConfigFromSettings()));
-    QTimer::singleShot(0, mainWindow, SLOT(changeWindowStatus()));
-
+    QTimer::singleShot(0, w, SLOT(fillButtons()));
+    QTimer::singleShot(0, w, SLOT(alterConfigFromSettings()));
+    QTimer::singleShot(0, w, SLOT(changeWindowStatus()));
 
     mainAppHelper.changeMouseThread(inputEventThread);
 
@@ -809,49 +782,48 @@ int main(int argc, char *argv[])
     PadderCommon::mouseHelperObj.moveToThread(inputEventThread);
     inputEventThread->start(QThread::HighPriority);
 
+    int app_result = a.exec();
 
+    // Log any remaining messages if they exist.
+    appLogger.Log();
 
-    int app_result = antimicro.exec();
+    appLogger.LogInfo(QObject::tr("Quitting Program"), true, true);
 
-
-
-
-    appLogger.Log(); // Log any remaining messages if they exist.
-    appLogger.LogInfo(QObject::trUtf8("Quitting Program"), true, true);
-
-    joypad_worker = nullptr;
+    joypad_worker = 0;
 
     delete localServer;
-    localServer = nullptr;
+    localServer = 0;
 
     inputEventThread->quit();
     inputEventThread->wait();
 
     delete inputEventThread;
-    inputEventThread = nullptr;
+    inputEventThread = 0;
 
     delete joysticks;
-    joysticks = nullptr;
+    joysticks = 0;
 
     AntKeyMapper::getInstance()->deleteInstance();
 
 #if defined(Q_OS_UNIX) && defined(WITH_X11)
-
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     if (QApplication::platformName() == QStringLiteral("xcb"))
     {
-        X11Extras::getInstance()->closeDisplay();
+    #endif
+    X11Extras::getInstance()->closeDisplay();
+    #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     }
-
+    #endif
 #endif
 
     EventHandlerFactory::getInstance()->handler()->cleanup();
     EventHandlerFactory::getInstance()->deleteInstance();
 
-    delete mainWindow;
-    mainWindow = nullptr;
+    delete w;
+    w = 0;
 
     delete settings;
-    settings = nullptr;
+    settings = 0;
 
     return app_result;
 }

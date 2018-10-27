@@ -20,35 +20,29 @@
 
 #include "baseeventhandler.h"
 
-
-class JoyButtonSlot;
-
+#include <joybuttonslot.h>
 
 class XTestEventHandler : public BaseEventHandler
 {
     Q_OBJECT
-
 public:
-    explicit XTestEventHandler(QObject *parent = nullptr);
-    virtual ~XTestEventHandler();
+    explicit XTestEventHandler(QObject *parent = 0);
 
-    bool init() override;
-    bool cleanup() override;
+    virtual bool init();
+    virtual bool cleanup();
+    virtual void sendKeyboardEvent(JoyButtonSlot *slot, bool pressed);
+    virtual void sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed);
+    virtual void sendMouseEvent(int xDis, int yDis);
+    virtual void sendMouseAbsEvent(int xDis, int yDis, int screen);
 
-    void sendKeyboardEvent(JoyButtonSlot *slot, bool pressed) override;
-    void sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed) override;
-    void sendMouseEvent(int xDis, int yDis) override;
-    void sendMouseAbsEvent(int xDis, int yDis, int screen) override;
+    virtual QString getName();
+    virtual QString getIdentifier();
 
-    void sendMouseSpringEvent(int xDis, int yDis,
-                              int width, int height) override; // unsigned, unsigned, unsigned, unsigned
-    void sendMouseSpringEvent(int xDis, int yDis) override;
+    virtual void sendTextEntryEvent(QString maintext);
 
-    void sendTextEntryEvent(QString maintext) override;
+signals:
 
-    QString getName() override;
-    QString getIdentifier() override;
-    void printPostMessages() override;
+public slots:
 
 };
 

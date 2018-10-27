@@ -18,14 +18,12 @@
 #ifndef ADVANCEBUTTONDIALOG_H
 #define ADVANCEBUTTONDIALOG_H
 
-
-#include "uihelpers/advancebuttondialoghelper.h"
-
 #include <QDialog>
+#include <QListWidgetItem>
 
-class JoyButton;
-class SimpleKeyGrabberButton;
-class QListWidgetItem;
+#include "joybutton.h"
+#include "simplekeygrabberbutton.h"
+#include "uihelpers/advancebuttondialoghelper.h"
 
 namespace Ui {
 class AdvanceButtonDialog;
@@ -39,9 +37,14 @@ public:
     explicit AdvanceButtonDialog(JoyButton *button, QWidget *parent=0);
     ~AdvanceButtonDialog();
 
-    int getOldRow() const;
-    JoyButton *getButton() const;
-    AdvanceButtonDialogHelper const& getHelper();
+private:
+    Ui::AdvanceButtonDialog *ui;
+
+    enum SlotTypeComboIndex {
+        KBMouseSlot = 0, CycleSlot, DelaySlot, DistanceSlot, ExecuteSlot,
+        HoldSlot, LoadSlot, MouseModSlot, PauseSlot, PressTimeSlot,
+        ReleaseSlot, SetChangeSlot, TextEntry,
+    };
 
 protected:
     void connectButtonEvents(SimpleKeyGrabberButton *button);
@@ -58,6 +61,11 @@ protected:
     void populateSetSelectionComboBox();
     void populateSlotSetSelectionComboBox();
     void findTurboModeComboIndex();
+
+    int oldRow;
+    JoyButton *button;
+    AdvanceButtonDialogHelper helper;
+    static const int MINIMUMTURBO;
 
 signals:
     void toggleChanged(bool state);
@@ -76,9 +84,19 @@ private slots:
 
     void updateSlotsScrollArea(int value);
     void deleteSlot();
+    void changeSelectedSlot();
     void insertSlot();
+    void updateSelectedSlot(int value);
 
+    void insertPauseSlot();
+    void insertHoldSlot();
     void insertCycleSlot();
+    void insertDistanceSlot();
+    void insertReleaseSlot();
+    void insertMouseSpeedModSlot();
+    void insertKeyPressSlot();
+    void insertDelaySlot();
+    void insertSetChangeSlot();
     void insertTextEntrySlot();
     void insertExecuteSlot();
 
@@ -101,25 +119,6 @@ private slots:
 
     void changeSlotTypeDisplay(int index);
     void changeSlotHelpText(int index);
-
-private:
-
-    Ui::AdvanceButtonDialog *ui;
-
-    AdvanceButtonDialogHelper& getHelperLocal();
-
-    enum SlotTypeComboIndex {
-        KBMouseSlot = 0, CycleSlot, DelaySlot, DistanceSlot, ExecuteSlot,
-        HoldSlot, LoadSlot, MouseModSlot, PauseSlot, PressTimeSlot,
-        ReleaseSlot, SetChangeSlot, TextEntry
-    };
-
-    int oldRow;
-    JoyButton *m_button;
-    AdvanceButtonDialogHelper helper;
-
-    void insertKindOfSlot(int slotProperty, JoyButtonSlot::JoySlotInputAction inputAction);
-
 };
 
 #endif // ADVANCEBUTTONDIALOG_H

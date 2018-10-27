@@ -17,52 +17,37 @@
 
 #include "advancebuttondialoghelper.h"
 
-#include "messagehandler.h"
-#include "joybutton.h"
-
-#include <QDebug>
-
 AdvanceButtonDialogHelper::AdvanceButtonDialogHelper(JoyButton *button,
                                                      QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_ASSERT(button);
 
     this->button = button;
 }
 
-void AdvanceButtonDialogHelper::insertAssignedSlot(int code, int alias, int index,
+void AdvanceButtonDialogHelper::insertAssignedSlot(int code, unsigned int alias, int index,
                                                     JoyButtonSlot::JoySlotInputAction mode)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     button->eventReset();
     button->insertAssignedSlot(code, alias, index, mode);
 }
 
 void AdvanceButtonDialogHelper::setAssignedSlot(JoyButtonSlot *otherSlot, int index)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     button->eventReset();
     button->setAssignedSlot(otherSlot, index);
 }
 
-void AdvanceButtonDialogHelper::setAssignedSlot(int code, int alias, int index,
+void AdvanceButtonDialogHelper::setAssignedSlot(int code, unsigned int alias, int index,
                                                 JoyButtonSlot::JoySlotInputAction mode)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     button->eventReset();
     button->setAssignedSlot(code, alias, index, mode);
 }
 
 void AdvanceButtonDialogHelper::removeAssignedSlot(int index)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     button->eventReset();
     button->removeAssignedSlot(index);
 }

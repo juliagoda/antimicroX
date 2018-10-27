@@ -27,32 +27,26 @@
 class UInputEventHandler : public BaseEventHandler
 {
     Q_OBJECT
-
 public:
-    explicit UInputEventHandler(QObject *parent = nullptr);
+    explicit UInputEventHandler(QObject *parent = 0);
     ~UInputEventHandler();
 
-    virtual bool init() override;
-    virtual bool cleanup() override;
-    virtual void sendKeyboardEvent(JoyButtonSlot *slot, bool pressed) override;
-    virtual void sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed) override;
-    virtual void sendMouseEvent(int xDis, int yDis) override;
-    virtual void sendMouseAbsEvent(int xDis, int yDis, int screen) override;
+    virtual bool init();
+    virtual bool cleanup();
+    virtual void sendKeyboardEvent(JoyButtonSlot *slot, bool pressed);
+    virtual void sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed);
+    virtual void sendMouseEvent(int xDis, int yDis);
+    virtual void sendMouseAbsEvent(int xDis, int yDis, int screen);
 
-    virtual void sendMouseSpringEvent(int xDis, int yDis,
-                                      int width, int height) override;
-    virtual void sendMouseSpringEvent(int xDis, int yDis) override;
+    virtual void sendMouseSpringEvent(unsigned int xDis, unsigned int yDis,
+                                      unsigned int width, unsigned int height);
+    virtual void sendMouseSpringEvent(int xDis, int yDis);
 
-    virtual QString getName() override;
-    virtual QString getIdentifier() override;
-    virtual void printPostMessages() override;
+    virtual QString getName();
+    virtual QString getIdentifier();
+    virtual void printPostMessages();
 
-    virtual void sendTextEntryEvent(QString maintext) override;
-
-    int getKeyboardFileHandler();
-    int getMouseFileHandler();
-    int getSpringMouseFileHandler();
-    const QString getUinputDeviceLocation();
+    virtual void sendTextEntryEvent(QString maintext);
 
 protected:
     int openUInputHandle();
@@ -64,24 +58,22 @@ protected:
     void createUInputMouseDevice(int filehandle);
     void createUInputSpringMouseDevice(int filehandle);
     void closeUInputDevice(int filehandle);
-    void write_uinput_event(int filehandle, int type,
-                            int code, int value, bool syn=true); // .., .., unsigned, unsigned, .., ..
+    void write_uinput_event(int filehandle, unsigned int type,
+                            unsigned int code, int value, bool syn=true);
 
-private slots:
-#ifdef WITH_X11
-    void x11ResetMouseAccelerationChange();
-#endif
-
-private:
     int keyboardFileHandler;
     int mouseFileHandler;
     int springMouseFileHandler;
     QString uinputDeviceLocation;
 
-    bool cleanupUinputEvHand();
-    void testAndAppend(bool tested, QList<unsigned int>& tempList, unsigned int key);
-    void initDevice(int device, QString name, bool& result);
+signals:
 
+public slots:
+
+private slots:
+#ifdef WITH_X11
+    void x11ResetMouseAccelerationChange();
+#endif
 };
 
 #endif // UINPUTEVENTHANDLER_H

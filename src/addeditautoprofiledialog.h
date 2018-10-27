@@ -20,13 +20,9 @@
 
 #include <QDialog>
 
-#include <QtGlobal>
-
-class AutoProfileInfo;
-class AntiMicroSettings;
-class InputDevice;
-class CapturedWindowInfoDialog;
-class UnixCaptureWindowUtility;
+#include "autoprofileinfo.h"
+#include "inputdevice.h"
+#include "antimicrosettings.h"
 
 namespace Ui {
 class AddEditAutoProfileDialog;
@@ -39,48 +35,17 @@ class AddEditAutoProfileDialog : public QDialog
 public:
     explicit AddEditAutoProfileDialog(AutoProfileInfo *info, AntiMicroSettings *settings, QList<InputDevice*> *devices,
                                       QList<QString> &reservedGUIDS,
-                                      bool edit=false, QWidget *parent = nullptr);
+                                      bool edit=false, QWidget *parent = 0);
     ~AddEditAutoProfileDialog();
 
-    AutoProfileInfo* getAutoProfile() const;
-    QString getOriginalGUID() const;
-    QString getOriginalExe() const;
-    QString getOriginalWindowClass() const;
-    QString getOriginalWindowName() const;
-
-    QList<InputDevice*> *getDevices() const;
-    AntiMicroSettings *getSettings() const;
-    bool getEditForm() const;
-    bool getDefaultInfo() const;
-    QList<QString> const& getReservedGUIDs();
-
+    AutoProfileInfo* getAutoProfile();
+    QString getOriginalGUID();
+    QString getOriginalExe();
+    QString getOriginalWindowClass();
+    QString getOriginalWindowName();
 
 protected:
     virtual void accept();
-
-signals:
-    void captureFinished();
-
-private slots:
-    void openProfileBrowseDialog();
-    void openApplicationBrowseDialog();
-    void saveAutoProfileInformation();
-    void checkForReservedGUIDs(int index);
-    void checkForDefaultStatus();
-    void windowPropAssignment(CapturedWindowInfoDialog *dialog);
-
-#ifdef Q_OS_WIN
-    void openWinAppProfileDialog();
-    void captureWindowsApplicationPath();
-#elif defined(Q_OS_UNIX)
-    void showCaptureHelpWindow();
-    void checkForGrabbedWindow(UnixCaptureWindowUtility* util);
-#endif
-
-    void on_setPartialCheckBox_stateChanged(int arg1);
-
-private:
-    Ui::AddEditAutoProfileDialog *ui;
 
     AutoProfileInfo *info;
     QList<InputDevice*> *devices;
@@ -93,6 +58,27 @@ private:
     QString originalWindowClass;
     QString originalWindowName;
 
+private:
+    Ui::AddEditAutoProfileDialog *ui;
+
+signals:
+    void captureFinished();
+
+private slots:
+    void openProfileBrowseDialog();
+    void openApplicationBrowseDialog();
+    void saveAutoProfileInformation();
+    void checkForReservedGUIDs(int index);
+    void checkForDefaultStatus();
+    void windowPropAssignment();
+
+#ifdef Q_OS_WIN
+    void openWinAppProfileDialog();
+    void captureWindowsApplicationPath();
+#else
+    void showCaptureHelpWindow();
+    void checkForGrabbedWindow();
+#endif
 };
 
 #endif // ADDEDITAUTOPROFILEDIALOG_H

@@ -17,7 +17,6 @@
 
 #include "joykeyrepeathelper.h"
 #include "event.h"
-#include "joybuttonslot.h"
 
 JoyKeyRepeatHelper::JoyKeyRepeatHelper(QObject *parent) :
     QObject(parent)
@@ -73,7 +72,7 @@ unsigned int JoyKeyRepeatHelper::getKeyRepeatDelay()
 }
 */
 
-void JoyKeyRepeatHelper::setKeyRepeatRate(int repeatRate)
+void JoyKeyRepeatHelper::setKeyRepeatRate(unsigned int repeatRate)
 {
     if (repeatRate > 0)
     {
@@ -81,7 +80,7 @@ void JoyKeyRepeatHelper::setKeyRepeatRate(int repeatRate)
     }
 }
 
-int JoyKeyRepeatHelper::getKeyRepeatRate()
+unsigned int JoyKeyRepeatHelper::getKeyRepeatRate()
 {
     return keyRepeatRate;
 }

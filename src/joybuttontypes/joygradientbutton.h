@@ -20,17 +20,13 @@
 
 #include "joybutton.h"
 
-class SetJoystick;
-
 class JoyGradientButton : public JoyButton
 {
     Q_OBJECT
-
 public:
     explicit JoyGradientButton(int index, int originset, SetJoystick *parentSet, QObject *parent=0);
 
-    using JoyButton::getPartialName;
-    using JoyButton::setChangeSetCondition;
+signals:
 
 protected slots:
     virtual void turboEvent();

@@ -1,4 +1,4 @@
-﻿/* antimicro Gamepad to KB+M event mapper
+/* antimicro Gamepad to KB+M event mapper
  * Copyright (C) 2015 Travis Nickles <nickles.travis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,23 +18,19 @@
 #ifndef JOYAXISBUTTON_H
 #define JOYAXISBUTTON_H
 
+#include <QString>
 
 #include "joybuttontypes/joygradientbutton.h"
 
-#include <QString>
-
-class VDPad;
-class SetJoystick;
 class JoyAxis;
 
 class JoyAxisButton : public JoyGradientButton
 {
     Q_OBJECT
-
 public:
     explicit JoyAxisButton(JoyAxis *axis, int index, int originset, SetJoystick *parentSet, QObject *parent=0);
 
-    virtual QString getPartialName(bool forceFullFormat=false, bool displayNames=false) const;
+    virtual QString getPartialName(bool forceFullFormat=false, bool displayNames=false);
     virtual QString getXmlName();
     virtual double getDistanceFromDeadZone();
 
@@ -43,6 +39,7 @@ public:
 
     virtual void setChangeSetCondition(SetChangeCondition condition, bool passive=false,
                                        bool updateActiveString=true);
+    JoyAxis* getAxis();
     virtual void setVDPad(VDPad *vdpad);
     virtual void setTurboMode(TurboMode mode);
     virtual bool isPartRealAxis();
@@ -50,13 +47,14 @@ public:
     virtual double getAccelerationDistance();
     virtual double getLastAccelerationDistance();
 
-    JoyAxis* getAxis() const;
+    static const QString xmlName;
+
+protected:
+    JoyAxis *axis;
 
 signals:
     void setAssignmentChanged(int current_button, int axis_index, int associated_set, int mode);
 
-private:
-    JoyAxis *m_axis;
 };
 
 #endif // JOYAXISBUTTON_H

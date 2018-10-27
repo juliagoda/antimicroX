@@ -17,66 +17,47 @@
 
 #include "qtkeymapperbase.h"
 
-#include "messagehandler.h"
-
-#include <QDebug>
-
-
-const int QtKeyMapperBase::customQtKeyPrefix;
-const int QtKeyMapperBase::customKeyPrefix;
-const int QtKeyMapperBase::nativeKeyPrefix;
+const unsigned int QtKeyMapperBase::customQtKeyPrefix;
+const unsigned int QtKeyMapperBase::customKeyPrefix;
+const unsigned int QtKeyMapperBase::nativeKeyPrefix;
 
 QtKeyMapperBase::QtKeyMapperBase(QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
 
-int QtKeyMapperBase::returnQtKey(int key, int scancode)
+unsigned int QtKeyMapperBase::returnQtKey(unsigned int key, unsigned int scancode)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(scancode);
 
-    return virtKeyToQtKeyHash.value(key);
+    return virtualKeyToQtKey.value(key);
 }
 
-int QtKeyMapperBase::returnVirtualKey(int qkey)
+unsigned int QtKeyMapperBase::returnVirtualKey(unsigned int qkey)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return qtKeyToVirtKeyHash.value(qkey);
+    return qtKeyToVirtualKey.value(qkey);
 }
 
-bool QtKeyMapperBase::isModifier(int qkey)
+bool QtKeyMapperBase::isModifier(unsigned int qkey)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool modifier = false;
-    int qtKeyValue = qkey & 0x0FFFFFFF;
+    unsigned int qtKeyValue = qkey & 0x0FFFFFFF;
 
-    switch(qtKeyValue)
+    if (qtKeyValue == Qt::Key_Shift)
     {
-        case Qt::Key_Shift:
-        {
-            modifier = true;
-            break;
-        }
-        case Qt::Key_Control:
-        {
-            modifier = true;
-            break;
-        }
-        case Qt::Key_Alt:
-        {
-            modifier = true;
-            break;
-        }
-        case Qt::Key_Meta:
-        {
-            modifier = true;
-            break;
-        }
+        modifier = true;
+    }
+    else if (qtKeyValue == Qt::Key_Control)
+    {
+        modifier = true;
+    }
+    else if (qtKeyValue == Qt::Key_Alt)
+    {
+        modifier = true;
+    }
+    else if (qtKeyValue == Qt::Key_Meta)
+    {
+        modifier = true;
     }
 
     return modifier;
@@ -84,14 +65,14 @@ bool QtKeyMapperBase::isModifier(int qkey)
 
 QtKeyMapperBase::charKeyInformation QtKeyMapperBase::getCharKeyInformation(QChar value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     charKeyInformation temp;
     temp.virtualkey = 0;
     temp.modifiers = Qt::NoModifier;
 
-    if (virtkeyToCharKeyInfo.contains(value.unicode()))
-        temp = virtkeyToCharKeyInfo.value(value.unicode());
+    if (virtualkeyToCharKeyInformation.contains(value.unicode()))
+    {
+        temp = virtualkeyToCharKeyInformation.value(value.unicode());
+    }
 
     return temp;
 }
@@ -102,7 +83,5 @@ QtKeyMapperBase::charKeyInformation QtKeyMapperBase::getCharKeyInformation(QChar
  */
 QString QtKeyMapperBase::getIdentifier()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return identifier;
 }

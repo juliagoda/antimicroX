@@ -29,11 +29,10 @@
 class Logger : public QObject
 {
     Q_OBJECT
-
 public:
     enum LogLevel
     {
-    LOG_NONE = 0, LOG_ERROR, LOG_WARNING, LOG_INFO, LOG_DEBUG,
+        LOG_NONE = 0, LOG_ERROR, LOG_WARNING, LOG_INFO, LOG_DEBUG,
 	LOG_MAX = LOG_DEBUG
     };
 
@@ -43,13 +42,12 @@ public:
         bool newline;
     } LogMessage;
 
-    explicit Logger(QTextStream *stream, LogLevel outputLevel = LOG_INFO, QObject *parent = nullptr);
-    explicit Logger(QTextStream *stream, QTextStream *errorStream, LogLevel outputLevel = LOG_INFO, QObject *parent = nullptr);
+    explicit Logger(QTextStream *stream, LogLevel outputLevel = LOG_INFO, QObject *parent = 0);
+    explicit Logger(QTextStream *stream, QTextStream *errorStream, LogLevel outputLevel = LOG_INFO, QObject *parent = 0);
     ~Logger();
 
     static void setLogLevel(LogLevel level);
     LogLevel getCurrentLogLevel();
-    QList<LogMessage> const& getPendingMessages();
 
     static void setCurrentStream(QTextStream *stream);
     static void setCurrentLogFile(QString filename);
@@ -80,6 +78,7 @@ public:
         {
             directLog(LOG_INFO, message, newline);
         }
+        //Log(LOG_INFO, message, newline);
     }
 
     inline static void LogDebug(const QString &message, bool newline=true, bool direct=false)
@@ -92,6 +91,8 @@ public:
         {
             directLog(LOG_DEBUG, message, newline);
         }
+
+        //Log(LOG_DEBUG, message, newline);
     }
 
     inline static void LogWarning(const QString &message, bool newline=true, bool direct=false)
@@ -104,6 +105,7 @@ public:
         {
             directLog(LOG_WARNING, message, newline);
         }
+        //Log(LOG_WARNING, message, newline);
     }
 
     inline static void LogError(const QString &message, bool newline=true, bool direct=false)
@@ -116,11 +118,12 @@ public:
         {
             directLog(LOG_ERROR, message, newline);
         }
+        //Log(LOG_ERROR, message, newline);
     }
 
     inline static Logger* getInstance()
     {
-        Q_ASSERT(instance != nullptr);
+        Q_ASSERT(instance != NULL);
         return instance;
     }
 
@@ -129,21 +132,18 @@ protected:
     void closeErrorLogger(bool closeStream=true);
     void logMessage(LogMessage msg);
 
-    bool writeTime;
-
     QFile outputFile;
-    QFile errorFile;
-
     QTextStream outFileStream;
     QTextStream *outputStream;
+    
+    QFile errorFile;
     QTextStream outErrorFileStream;
     QTextStream *errorStream;
-
     LogLevel outputLevel;
     QMutex logMutex;
     QTimer pendingTimer;
-
     QList<LogMessage> pendingMessages;
+    bool writeTime;
 
     static Logger *instance;
 

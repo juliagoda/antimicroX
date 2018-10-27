@@ -21,16 +21,14 @@
 #include <QObject>
 #include <QString>
 
-class JoyButtonSlot;
-
+#include <springmousemoveinfo.h>
+#include <joybuttonslot.h>
 
 class BaseEventHandler : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit BaseEventHandler(QObject *parent = nullptr);
-    virtual ~BaseEventHandler();
+    explicit BaseEventHandler(QObject *parent = 0);
 
     virtual bool init() = 0;
     virtual bool cleanup() = 0;
@@ -40,8 +38,8 @@ public:
     virtual void sendMouseEvent(int xDis, int yDis) = 0;
     virtual void sendMouseAbsEvent(int xDis, int yDis, int screen);
 
-    virtual void sendMouseSpringEvent(int xDis, int yDis,
-                                      int width, int height); //.., unsigned, unsigned, unsigned, unsigned
+    virtual void sendMouseSpringEvent(unsigned int xDis, unsigned int yDis,
+                                      unsigned int width, unsigned int height);
     virtual void sendMouseSpringEvent(int xDis, int yDis);
 
     virtual void sendTextEntryEvent(QString maintext);
@@ -54,6 +52,10 @@ public:
 
 protected:
     QString lastErrorString;
+
+signals:
+
+public slots:
 
 };
 

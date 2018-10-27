@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>478</width>
-    <height>408</height>
+    <height>327</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -107,13 +107,6 @@ in the form.</string>
         <item>
          <widget class="QLineEdit" name="winNameLineEdit"/>
         </item>
-        <item>
-         <widget class="QCheckBox" name="setPartialCheckBox">
-          <property name="text">
-           <string>set partial title</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </item>
       <item>
@@ -160,7 +153,7 @@ in the form.</string>
      <item>
       <widget class="QLabel" name="devicesLabel">
        <property name="text">
-        <string>De&amp;vices:</string>
+        <string>Devices:</string>
        </property>
        <property name="buddy">
         <cstring>devicesComboBox</cstring>
@@ -215,8 +208,8 @@ of the all default profile option.</string>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>254</x>
-     <y>401</y>
+     <x>248</x>
+     <y>254</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -231,8 +224,8 @@ of the all default profile option.</string>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>322</x>
-     <y>401</y>
+     <x>316</x>
+     <y>260</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

@@ -97,6 +97,7 @@
        </layout>
       </item>
      </layout>
+     <zorder></zorder>
     </widget>
    </item>
    <item>

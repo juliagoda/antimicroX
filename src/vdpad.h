@@ -24,11 +24,10 @@
 class VDPad : public JoyDPad
 {
     Q_OBJECT
-
 public:
-    explicit VDPad(int index, int originset, SetJoystick *parentSet, QObject *parent = nullptr);
+    explicit VDPad(int index, int originset, SetJoystick *parentSet, QObject *parent = 0);
     explicit VDPad(JoyButton *upButton, JoyButton *downButton, JoyButton *leftButton, JoyButton *rightButton,
-                   int index, int originset, SetJoystick *parentSet, QObject *parent = nullptr);
+                   int index, int originset, SetJoystick *parentSet, QObject *parent = 0);
     ~VDPad();
 
     void joyEvent(bool pressed, bool ignoresets=false);
@@ -37,29 +36,26 @@ public:
     void removeVButton(JoyButton *button);
     JoyButton* getVButton(JoyDPadButton::JoyDPadDirections direction);
     bool isEmpty();
-    virtual QString getName(bool forceFullFormat=false, bool displayName=false) override;
-    virtual QString getXmlName() override;
+    virtual QString getName(bool forceFullFormat=false, bool displayName=false);
+    virtual QString getXmlName();
 
     void queueJoyEvent(bool ignoresets=false);
     bool hasPendingEvent();
     void clearPendingEvent();
 
-    JoyButton *getUpButton() const;
-    JoyButton *getDownButton() const;
-    JoyButton *getLeftButton() const;
-    JoyButton *getRightButton() const;
-    bool getPendingVDPadEvent() const;
+    static const QString xmlName;
 
-public slots:
-    void activatePendingEvent();
-
-private:
+protected:
     JoyButton *upButton;
     JoyButton *downButton;
     JoyButton *leftButton;
     JoyButton *rightButton;
     bool pendingVDPadEvent;
 
+signals:
+
+public slots:
+    void activatePendingEvent();
 };
 
 #endif // VDPAD_H

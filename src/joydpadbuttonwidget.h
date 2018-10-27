@@ -20,19 +20,18 @@
 
 #include "joybuttonwidget.h"
 
-class JoyButton;
-class QWidget;
-
 class JoyDPadButtonWidget : public JoyButtonWidget
 {
     Q_OBJECT
-
 public:
-    explicit JoyDPadButtonWidget(JoyButton* button, bool displayNames, QWidget *parent = nullptr);
+    explicit JoyDPadButtonWidget(JoyButton* button, bool displayNames, QWidget *parent = 0);
 
 protected:
-    virtual QString generateLabel() override;
+    virtual QString generateLabel();
 
+signals:
+    
+public slots:
 };
 
 #endif // JOYDPADBUTTONWIDGET_H

@@ -18,35 +18,32 @@
 #ifndef JOYCONTROLSTICKCONTEXTMENU_H
 #define JOYCONTROLSTICKCONTEXTMENU_H
 
-
-#include "uihelpers/joycontrolstickcontextmenuhelper.h"
-
 #include <QMenu>
 
-class JoyControlStick;
-class QWidget;
+#include "joycontrolstick.h"
+#include "uihelpers/joycontrolstickcontextmenuhelper.h"
 
 class JoyControlStickContextMenu : public QMenu
 {
     Q_OBJECT
-
 public:
-    explicit JoyControlStickContextMenu(JoyControlStick *stick, QWidget *parent = nullptr);
+    explicit JoyControlStickContextMenu(JoyControlStick *stick, QWidget *parent = 0);
     void buildMenu();
 
 protected:
     int getPresetIndex();
 
-private slots:
-    void setStickPreset(QAction* action);
-    void setStickMode(QAction* action);
-    void openMouseSettingsDialog();
-
-private:
-    JoyControlStickContextMenuHelper& getHelperLocal();
-
     JoyControlStick *stick;
     JoyControlStickContextMenuHelper helper;
+
+signals:
+
+public slots:
+
+private slots:
+    void setStickPreset();
+    void setStickMode();
+    void openMouseSettingsDialog();
 };
 
 #endif // JOYCONTROLSTICKCONTEXTMENU_H

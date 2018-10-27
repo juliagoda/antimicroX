@@ -28,21 +28,24 @@
 class WinSendInputEventHandler : public BaseEventHandler
 {
     Q_OBJECT
-
 public:
-    explicit WinSendInputEventHandler(QObject *parent = nullptr);
+    explicit WinSendInputEventHandler(QObject *parent = 0);
 
-    virtual bool init() override;
-    virtual bool cleanup() override;
-    virtual void sendKeyboardEvent(JoyButtonSlot *slot, bool pressed) override;
-    virtual void sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed) override;
-    virtual void sendMouseEvent(int xDis, int yDis) override;
-    virtual void sendMouseSpringEvent(int xDis, int yDis,
-                                      int width, int height) override; // .., unsigned, unsigned, unsigned, unsigned
-    virtual void sendTextEntryEvent(QString maintext) override;
+    virtual bool init();
+    virtual bool cleanup();
+    virtual void sendKeyboardEvent(JoyButtonSlot *slot, bool pressed);
+    virtual void sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed);
+    virtual void sendMouseEvent(int xDis, int yDis);
+    virtual void sendMouseSpringEvent(unsigned int xDis, unsigned int yDis,
+                                      unsigned int width, unsigned int height);
+    virtual void sendTextEntryEvent(QString maintext);
 
-    virtual QString getName() override;
-    virtual QString getIdentifier() override;
+    virtual QString getName();
+    virtual QString getIdentifier();
+
+signals:
+
+public slots:
 
 };
 

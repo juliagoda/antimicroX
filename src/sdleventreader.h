@@ -18,39 +18,42 @@
 #ifndef SDLEVENTREADER_H
 #define SDLEVENTREADER_H
 
-#include <SDL2/SDL.h>
-#include "joystick.h"
-
 #include <QObject>
 #include <QMap>
 #include <QTimer>
 
+#ifdef USE_SDL_2
+#include <SDL2/SDL.h>
+#else
+#include <SDL/SDL.h>
+#endif
 
-class InputDevice;
-class AntiMicroSettings;
-
+#include "joystick.h"
+#include "inputdevice.h"
+#include "antimicrosettings.h"
 
 class SDLEventReader : public QObject
 {
     Q_OBJECT
-
 public:
     explicit SDLEventReader(QMap<SDL_JoystickID, InputDevice*> *joysticks,
                             AntiMicroSettings *settings,
-                            QObject *parent = nullptr);
+                            QObject *parent = 0);
     ~SDLEventReader();
 
     bool isSDLOpen();
-
-    QMap<SDL_JoystickID, InputDevice*> *getJoysticks() const;
-    AntiMicroSettings *getSettings() const;
-    QTimer const& getPollRateTimer();
 
 protected:
     void initSDL();
     void closeSDL();
     void clearEvents();
-    int eventStatus();
+    int CheckForEvents();
+
+    QMap<SDL_JoystickID, InputDevice*> *joysticks;
+    bool sdlIsOpen;
+    AntiMicroSettings *settings;
+    unsigned int pollRate;
+    QTimer pollRateTimer;
 
 signals:
     void eventRaised();
@@ -62,7 +65,7 @@ public slots:
     void performWork();
     void stop();
     void refresh();
-    void updatePollRate(int tempPollRate); // (unsigned)
+    void updatePollRate(unsigned int tempPollRate);
     void resetJoystickMap();
     void quit();
     void closeDevices();
@@ -70,13 +73,6 @@ public slots:
 
 private slots:
     void secondaryRefresh();
-
-private:
-    QMap<SDL_JoystickID, InputDevice*> *joysticks;
-    bool sdlIsOpen;
-    AntiMicroSettings *settings;
-    int pollRate; // unsigned
-    QTimer pollRateTimer;
 
 };
 

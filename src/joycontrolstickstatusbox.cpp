@@ -15,101 +15,77 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joycontrolstickstatusbox.h"
-
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "joycontrolstick.h"
-#include "joyaxis.h"
-#include "common.h"
-
-#include <qdrawutil.h>
-
-#include <QDebug>
+//#include <QDebug>
 #include <QPainter>
+#include <qdrawutil.h>
 #include <QSizePolicy>
 #include <QList>
 #include <QLinearGradient>
-#include <QPaintEvent>
 
+#include "joycontrolstickstatusbox.h"
+#include "common.h"
 
 JoyControlStickStatusBox::JoyControlStickStatusBox(QWidget *parent) :
     QWidget(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    this->stick = nullptr;
+    this->stick = 0;
 }
 
 JoyControlStickStatusBox::JoyControlStickStatusBox(JoyControlStick *stick, QWidget *parent) :
     QWidget(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->stick = stick;
 
     connect(stick, SIGNAL(deadZoneChanged(int)), this, SLOT(update()));
-        connect(stick, SIGNAL(moved(int,int)), this, SLOT(update()));
-        connect(stick, SIGNAL(diagonalRangeChanged(int)), this, SLOT(update()));
-        connect(stick, SIGNAL(maxZoneChanged(int)), this, SLOT(update()));
-        connect(stick, SIGNAL(joyModeChanged()), this, SLOT(update()));
-        connect(stick, SIGNAL(circleAdjustChange(double)), this, SLOT(update()));
+    connect(stick, SIGNAL(moved(int,int)), this, SLOT(update()));
+    connect(stick, SIGNAL(diagonalRangeChanged(int)), this, SLOT(update()));
+    connect(stick, SIGNAL(maxZoneChanged(int)), this, SLOT(update()));
+    connect(stick, SIGNAL(joyModeChanged()), this, SLOT(update()));
+    connect(stick, SIGNAL(circleAdjustChange(double)), this, SLOT(update()));
 }
 
 void JoyControlStickStatusBox::setStick(JoyControlStick *stick)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    if (stick)
+    {
+        disconnect(stick, SIGNAL(deadZoneChanged(int)), this, 0);
+        disconnect(stick, SIGNAL(moved(int,int)), this, 0);
+        disconnect(stick, SIGNAL(diagonalRangeChanged(int)), this, 0);
+        disconnect(stick, SIGNAL(maxZoneChanged(int)), this, 0);
+        disconnect(stick, SIGNAL(joyModeChanged()), this, 0);
+    }
 
-    if (stick != nullptr)
-        {
-            disconnect(stick, SIGNAL(deadZoneChanged(int)), this, nullptr);
-            disconnect(stick, SIGNAL(moved(int,int)), this, nullptr);
-            disconnect(stick, SIGNAL(diagonalRangeChanged(int)), this, nullptr);
-            disconnect(stick, SIGNAL(maxZoneChanged(int)), this, nullptr);
-            disconnect(stick, SIGNAL(joyModeChanged()), this, nullptr);
-        }
-
-        this->stick = stick;
-        connect(stick, SIGNAL(deadZoneChanged(int)), this, SLOT(update()));
-        connect(stick, SIGNAL(moved(int,int)), this, SLOT(update()));
-        connect(stick, SIGNAL(diagonalRangeChanged(int)), this, SLOT(update()));
-        connect(stick, SIGNAL(maxZoneChanged(int)), this, SLOT(update()));
-        connect(stick, SIGNAL(joyModeChanged()), this, SLOT(update()));
-
-    update();
+    this->stick = stick;
+    connect(stick, SIGNAL(deadZoneChanged(int)), this, SLOT(update()));
+    connect(stick, SIGNAL(moved(int,int)), this, SLOT(update()));
+    connect(stick, SIGNAL(diagonalRangeChanged(int)), this, SLOT(update()));
+    connect(stick, SIGNAL(maxZoneChanged(int)), this, SLOT(update()));
+    connect(stick, SIGNAL(joyModeChanged()), this, SLOT(update()));
 }
 
-JoyControlStick* JoyControlStickStatusBox::getStick() const
+JoyControlStick* JoyControlStickStatusBox::getStick()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return stick;
 }
 
 int JoyControlStickStatusBox::heightForWidth(int width) const
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return width;
 }
 
 QSize JoyControlStickStatusBox::sizeHint() const
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return QSize(-1, -1);
 }
 
 void JoyControlStickStatusBox::paintEvent(QPaintEvent *event)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(event);
 
     PadderCommon::inputDaemonMutex.lock();
 
-    if ((stick->getJoyMode() == JoyControlStick::StandardMode) ||
-        (stick->getJoyMode() == JoyControlStick::EightWayMode))
+    if (stick->getJoyMode() == JoyControlStick::StandardMode ||
+        stick->getJoyMode() == JoyControlStick::EightWayMode)
     {
         drawEightWayBox();
     }
@@ -127,8 +103,6 @@ void JoyControlStickStatusBox::paintEvent(QPaintEvent *event)
 
 void JoyControlStickStatusBox::drawEightWayBox()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPainter paint (this);
     paint.setRenderHint(QPainter::Antialiasing, true);
 
@@ -147,22 +121,31 @@ void JoyControlStickStatusBox::drawEightWayBox()
     painter.drawRect(0, 0, side-1, side-1);
 
     painter.save();
-    painter.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    painter.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    painter.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    painter.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     // Draw diagonal zones
     QList<double> anglesList = stick->getDiagonalZoneAngles();
+    /*QListIterator<double> iter(anglesList);
+    qDebug() << "LIST START";
+    qDebug() << "DIAGONAL RANGE: " << stick->getDiagonalRange();
+    while (iter.hasNext())
+    {
+        qDebug() << "ANGLE: " << iter.next();
+    }
+    qDebug() << "LIST END";
+    qDebug();
+    */
 
     penny.setWidth(0);
     penny.setColor(Qt::black);
     painter.setPen(penny);
     painter.setBrush(QBrush(Qt::green));
 
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, static_cast<int>(anglesList.value(2))*16, stick->getDiagonalRange()*16);
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, static_cast<int>(anglesList.value(4))*16, stick->getDiagonalRange()*16);
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, static_cast<int>(anglesList.value(6))*16, stick->getDiagonalRange()*16);
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, static_cast<int>(anglesList.value(8))
-            *16, stick->getDiagonalRange()*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(2)*16, stick->getDiagonalRange()*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(4)*16, stick->getDiagonalRange()*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(6)*16, stick->getDiagonalRange()*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(8)*16, stick->getDiagonalRange()*16);
 
     // Draw deadzone circle
     penny.setWidth(0);
@@ -186,8 +169,8 @@ void JoyControlStickStatusBox::drawEightWayBox()
     painter.restore();
 
     painter.save();
-    painter.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    painter.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    painter.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    painter.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     penny.setWidth(0);
     painter.setBrush(QBrush(Qt::black));
@@ -198,14 +181,14 @@ void JoyControlStickStatusBox::drawEightWayBox()
     int linexstart = stick->getXCoordinate()-1000;
     int lineystart = stick->getYCoordinate()-1000;
 
-    if (linexstart < GlobalVariables::JoyAxis::AXISMIN)
+    if (linexstart < JoyAxis::AXISMIN)
     {
-        linexstart = GlobalVariables::JoyAxis::AXISMIN;
+        linexstart = JoyAxis::AXISMIN;
     }
 
-    if (lineystart < GlobalVariables::JoyAxis::AXISMIN)
+    if (lineystart < JoyAxis::AXISMIN)
     {
-        lineystart = GlobalVariables::JoyAxis::AXISMIN;
+        lineystart = JoyAxis::AXISMIN;
     }
 
     painter.drawRect(linexstart, lineystart, 2000, 2000);
@@ -217,14 +200,14 @@ void JoyControlStickStatusBox::drawEightWayBox()
     // Draw adjusted crosshair
     linexstart = stick->getCircleXCoordinate()-1000;
     lineystart = stick->getCircleYCoordinate()-1000;
-    if (linexstart < GlobalVariables::JoyAxis::AXISMIN)
+    if (linexstart < JoyAxis::AXISMIN)
     {
-        linexstart = GlobalVariables::JoyAxis::AXISMIN;
+        linexstart = JoyAxis::AXISMIN;
     }
 
-    if (lineystart < GlobalVariables::JoyAxis::AXISMIN)
+    if (lineystart < JoyAxis::AXISMIN)
     {
-        lineystart = GlobalVariables::JoyAxis::AXISMIN;
+        lineystart = JoyAxis::AXISMIN;
     }
 
     painter.drawRect(linexstart, lineystart, 2000, 2000);
@@ -241,18 +224,18 @@ void JoyControlStickStatusBox::drawEightWayBox()
     paint.drawPixmap(pix.rect(), pix);
 
     paint.save();
-    paint.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    paint.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    paint.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    paint.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     // Draw max zone and initial inner clear circle
     int maxzone = stick->getMaxZone();
-    int diffmaxzone = GlobalVariables::JoyAxis::AXISMAX - maxzone;
+    int diffmaxzone = JoyAxis::AXISMAX - maxzone;
     paint.setOpacity(0.5);
     paint.setBrush(Qt::darkGreen);
-    paint.drawEllipse(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2);
+    paint.drawEllipse(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2);
     paint.setCompositionMode(QPainter::CompositionMode_Clear);
     paint.setPen(Qt::NoPen);
-    paint.drawEllipse(-GlobalVariables::JoyAxis::AXISMAX+diffmaxzone, -GlobalVariables::JoyAxis::AXISMAX+diffmaxzone, GlobalVariables::JoyAxis::AXISMAX*2-(diffmaxzone*2), GlobalVariables::JoyAxis::AXISMAX*2-(diffmaxzone*2));
+    paint.drawEllipse(-JoyAxis::AXISMAX+diffmaxzone, -JoyAxis::AXISMAX+diffmaxzone, JoyAxis::AXISMAX*2-(diffmaxzone*2), JoyAxis::AXISMAX*2-(diffmaxzone*2));
 
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     paint.setOpacity(1.0);
@@ -266,8 +249,6 @@ void JoyControlStickStatusBox::drawEightWayBox()
 
 void JoyControlStickStatusBox::drawFourWayCardinalBox()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPainter paint(this);
     paint.setRenderHint(QPainter::Antialiasing, true);
 
@@ -286,8 +267,8 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
     painter.drawRect(0, 0, side-1, side-1);
 
     painter.save();
-    painter.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    painter.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    painter.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    painter.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     // Draw diagonal zones
     QList<int> anglesList = stick->getFourWayCardinalZoneAngles();
@@ -297,8 +278,8 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
     painter.setOpacity(0.25);
     painter.setBrush(QBrush(Qt::black));
 
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, anglesList.value(1)*16, 90*16);
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, anglesList.value(3)*16, 90*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(1)*16, 90*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(3)*16, 90*16);
 
     painter.setOpacity(1.0);
 
@@ -326,8 +307,8 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
     painter.restore();
 
     painter.save();
-    painter.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    painter.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    painter.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    painter.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
     penny.setWidth(0);
     painter.setBrush(QBrush(Qt::black));
     penny.setColor(Qt::black);
@@ -337,14 +318,14 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
     int linexstart = stick->getXCoordinate()-1000;
     int lineystart = stick->getYCoordinate()-1000;
 
-    if (linexstart < GlobalVariables::JoyAxis::AXISMIN)
+    if (linexstart < JoyAxis::AXISMIN)
     {
-        linexstart = GlobalVariables::JoyAxis::AXISMIN;
+        linexstart = JoyAxis::AXISMIN;
     }
 
-    if (lineystart < GlobalVariables::JoyAxis::AXISMIN)
+    if (lineystart < JoyAxis::AXISMIN)
     {
-        lineystart = GlobalVariables::JoyAxis::AXISMIN;
+        lineystart = JoyAxis::AXISMIN;
     }
 
     painter.drawRect(linexstart, lineystart, 2000, 2000);
@@ -356,14 +337,14 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
     // Draw adjusted crosshair
     linexstart = stick->getCircleXCoordinate()-1000;
     lineystart = stick->getCircleYCoordinate()-1000;
-    if (linexstart < GlobalVariables::JoyAxis::AXISMIN)
+    if (linexstart < JoyAxis::AXISMIN)
     {
-        linexstart = GlobalVariables::JoyAxis::AXISMIN;
+        linexstart = JoyAxis::AXISMIN;
     }
 
-    if (lineystart < GlobalVariables::JoyAxis::AXISMIN)
+    if (lineystart < JoyAxis::AXISMIN)
     {
-        lineystart = GlobalVariables::JoyAxis::AXISMIN;
+        lineystart = JoyAxis::AXISMIN;
     }
 
     painter.drawRect(linexstart, lineystart, 2000, 2000);
@@ -380,18 +361,18 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
     paint.drawPixmap(pix.rect(), pix);
 
     paint.save();
-    paint.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    paint.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    paint.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    paint.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     // Draw max zone and initial inner clear circle
     int maxzone = stick->getMaxZone();
-    int diffmaxzone = GlobalVariables::JoyAxis::AXISMAX - maxzone;
+    int diffmaxzone = JoyAxis::AXISMAX - maxzone;
     paint.setOpacity(0.5);
     paint.setBrush(Qt::darkGreen);
-    paint.drawEllipse(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2);
+    paint.drawEllipse(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2);
     paint.setCompositionMode(QPainter::CompositionMode_Clear);
     paint.setPen(Qt::NoPen);
-    paint.drawEllipse(-GlobalVariables::JoyAxis::AXISMAX+diffmaxzone, -GlobalVariables::JoyAxis::AXISMAX+diffmaxzone, GlobalVariables::JoyAxis::AXISMAX*2-(diffmaxzone*2), GlobalVariables::JoyAxis::AXISMAX*2-(diffmaxzone*2));
+    paint.drawEllipse(-JoyAxis::AXISMAX+diffmaxzone, -JoyAxis::AXISMAX+diffmaxzone, JoyAxis::AXISMAX*2-(diffmaxzone*2), JoyAxis::AXISMAX*2-(diffmaxzone*2));
 
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     paint.setOpacity(1.0);
@@ -405,8 +386,6 @@ void JoyControlStickStatusBox::drawFourWayCardinalBox()
 
 void JoyControlStickStatusBox::drawFourWayDiagonalBox()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPainter paint(this);
     paint.setRenderHint(QPainter::Antialiasing, true);
 
@@ -425,8 +404,8 @@ void JoyControlStickStatusBox::drawFourWayDiagonalBox()
     painter.drawRect(0, 0, side-1, side-1);
 
     painter.save();
-    painter.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    painter.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    painter.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    painter.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     // Draw diagonal zones
     QList<int> anglesList = stick->getFourWayDiagonalZoneAngles();
@@ -436,8 +415,8 @@ void JoyControlStickStatusBox::drawFourWayDiagonalBox()
     painter.setBrush(QBrush(Qt::black));
     painter.setOpacity(0.25);
 
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, anglesList.value(1)*16, 90*16);
-    painter.drawPie(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2, anglesList.value(3)*16, 90*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(1)*16, 90*16);
+    painter.drawPie(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2, anglesList.value(3)*16, 90*16);
 
     painter.setOpacity(1.0);
 
@@ -465,8 +444,8 @@ void JoyControlStickStatusBox::drawFourWayDiagonalBox()
     painter.restore();
 
     painter.save();
-    painter.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    painter.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    painter.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    painter.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
     penny.setWidth(0);
     painter.setBrush(QBrush(Qt::black));
     penny.setColor(Qt::black);
@@ -476,14 +455,14 @@ void JoyControlStickStatusBox::drawFourWayDiagonalBox()
     int linexstart = stick->getXCoordinate()-1000;
     int lineystart = stick->getYCoordinate()-1000;
 
-    if (linexstart < GlobalVariables::JoyAxis::AXISMIN)
+    if (linexstart < JoyAxis::AXISMIN)
     {
-        linexstart = GlobalVariables::JoyAxis::AXISMIN;
+        linexstart = JoyAxis::AXISMIN;
     }
 
-    if (lineystart < GlobalVariables::JoyAxis::AXISMIN)
+    if (lineystart < JoyAxis::AXISMIN)
     {
-        lineystart = GlobalVariables::JoyAxis::AXISMIN;
+        lineystart = JoyAxis::AXISMIN;
     }
 
     painter.drawRect(linexstart, lineystart, 2000, 2000);
@@ -495,14 +474,14 @@ void JoyControlStickStatusBox::drawFourWayDiagonalBox()
     // Draw adjusted crosshair
     linexstart = stick->getCircleXCoordinate()-1000;
     lineystart = stick->getCircleYCoordinate()-1000;
-    if (linexstart < GlobalVariables::JoyAxis::AXISMIN)
+    if (linexstart < JoyAxis::AXISMIN)
     {
-        linexstart = GlobalVariables::JoyAxis::AXISMIN;
+        linexstart = JoyAxis::AXISMIN;
     }
 
-    if (lineystart < GlobalVariables::JoyAxis::AXISMIN)
+    if (lineystart < JoyAxis::AXISMIN)
     {
-        lineystart = GlobalVariables::JoyAxis::AXISMIN;
+        lineystart = JoyAxis::AXISMIN;
     }
 
     painter.drawRect(linexstart, lineystart, 2000, 2000);
@@ -519,18 +498,18 @@ void JoyControlStickStatusBox::drawFourWayDiagonalBox()
     paint.drawPixmap(pix.rect(), pix);
 
     paint.save();
-    paint.scale(side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0), side / static_cast<double>(GlobalVariables::JoyAxis::AXISMAX*2.0));
-    paint.translate(GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX);
+    paint.scale(side / (double)(JoyAxis::AXISMAX*2.0), side / (double)(JoyAxis::AXISMAX*2.0));
+    paint.translate(JoyAxis::AXISMAX, JoyAxis::AXISMAX);
 
     // Draw max zone and initial inner clear circle
     int maxzone = stick->getMaxZone();
-    int diffmaxzone = GlobalVariables::JoyAxis::AXISMAX - maxzone;
+    int diffmaxzone = JoyAxis::AXISMAX - maxzone;
     paint.setOpacity(0.5);
     paint.setBrush(Qt::darkGreen);
-    paint.drawEllipse(-GlobalVariables::JoyAxis::AXISMAX, -GlobalVariables::JoyAxis::AXISMAX, GlobalVariables::JoyAxis::AXISMAX*2, GlobalVariables::JoyAxis::AXISMAX*2);
+    paint.drawEllipse(-JoyAxis::AXISMAX, -JoyAxis::AXISMAX, JoyAxis::AXISMAX*2, JoyAxis::AXISMAX*2);
     paint.setCompositionMode(QPainter::CompositionMode_Clear);
     paint.setPen(Qt::NoPen);
-    paint.drawEllipse(-GlobalVariables::JoyAxis::AXISMAX+diffmaxzone, -GlobalVariables::JoyAxis::AXISMAX+diffmaxzone, GlobalVariables::JoyAxis::AXISMAX*2-(diffmaxzone*2), GlobalVariables::JoyAxis::AXISMAX*2-(diffmaxzone*2));
+    paint.drawEllipse(-JoyAxis::AXISMAX+diffmaxzone, -JoyAxis::AXISMAX+diffmaxzone, JoyAxis::AXISMAX*2-(diffmaxzone*2), JoyAxis::AXISMAX*2-(diffmaxzone*2));
 
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     paint.setOpacity(1.0);

@@ -16,18 +16,11 @@
  */
 
 #include "joycontrolstickpushbutton.h"
-
-#include "messagehandler.h"
 #include "joycontrolstickcontextmenu.h"
-#include "joycontrolstick.h"
-
-#include <QDebug>
 
 JoyControlStickPushButton::JoyControlStickPushButton(JoyControlStick *stick, bool displayNames, QWidget *parent) :
     FlashButtonWidget(displayNames, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->stick = stick;
 
     refreshLabel();
@@ -35,17 +28,15 @@ JoyControlStickPushButton::JoyControlStickPushButton(JoyControlStick *stick, boo
     tryFlash();
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &JoyControlStickPushButton::customContextMenuRequested, this, &JoyControlStickPushButton::showContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
 
-    connect(stick, &JoyControlStick::active, this, &JoyControlStickPushButton::flash, Qt::QueuedConnection);
-    connect(stick, &JoyControlStick::released, this, &JoyControlStickPushButton::unflash, Qt::QueuedConnection);
-    connect(stick, &JoyControlStick::stickNameChanged, this, &JoyControlStickPushButton::refreshLabel);
+    connect(stick, SIGNAL(active(int, int)), this, SLOT(flash()), Qt::QueuedConnection);
+    connect(stick, SIGNAL(released(int, int)), this, SLOT(unflash()), Qt::QueuedConnection);
+    connect(stick, SIGNAL(stickNameChanged()), this, SLOT(refreshLabel()));
 }
 
-JoyControlStick* JoyControlStickPushButton::getStick() const
+JoyControlStick* JoyControlStickPushButton::getStick()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return stick;
 }
 
@@ -55,10 +46,8 @@ JoyControlStick* JoyControlStickPushButton::getStick() const
  */
 QString JoyControlStickPushButton::generateLabel()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString temp = QString();
-    if (!stick->getStickName().isEmpty() && ifDisplayNames())
+    QString temp;
+    if (!stick->getStickName().isEmpty() && displayNames)
     {
         temp.append(stick->getPartialName(false, true));
     }
@@ -67,34 +56,24 @@ QString JoyControlStickPushButton::generateLabel()
         temp.append(stick->getPartialName(false));
     }
 
-    #ifndef QT_DEBUG_NO_OUTPUT
-    qDebug() << "Name of joy control stick push button: " << temp;
-    #endif
-
     return temp;
 }
 
 void JoyControlStickPushButton::disableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    disconnect(stick, &JoyControlStick::active, this, &JoyControlStickPushButton::flash);
-    disconnect(stick, &JoyControlStick::released, this, &JoyControlStickPushButton::unflash);
+    disconnect(stick, SIGNAL(active(int, int)), this, SLOT(flash()));
+    disconnect(stick, SIGNAL(released(int, int)), this, SLOT(unflash()));
     this->unflash();
 }
 
 void JoyControlStickPushButton::enableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    connect(stick, &JoyControlStick::active, this, &JoyControlStickPushButton::flash, Qt::QueuedConnection);
-    connect(stick, &JoyControlStick::released, this, &JoyControlStickPushButton::unflash, Qt::QueuedConnection);
+    connect(stick, SIGNAL(active(int, int)), this, SLOT(flash()), Qt::QueuedConnection);
+    connect(stick, SIGNAL(released(int, int)), this, SLOT(unflash()), Qt::QueuedConnection);
 }
 
 void JoyControlStickPushButton::showContextMenu(const QPoint &point)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPoint globalPos = this->mapToGlobal(point);
     JoyControlStickContextMenu *contextMenu = new JoyControlStickContextMenu(stick, this);
     contextMenu->buildMenu();
@@ -103,8 +82,6 @@ void JoyControlStickPushButton::showContextMenu(const QPoint &point)
 
 void JoyControlStickPushButton::tryFlash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (stick->getCurrentDirection() != JoyControlStick::StickCentered)
     {
         flash();

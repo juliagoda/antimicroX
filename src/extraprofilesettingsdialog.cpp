@@ -15,58 +15,45 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+//#include <QDebug>
+
 #include "extraprofilesettingsdialog.h"
 #include "ui_extraprofilesettingsdialog.h"
-
-#include "messagehandler.h"
-#include "inputdevice.h"
-
-#include <QDebug>
-
 
 ExtraProfileSettingsDialog::ExtraProfileSettingsDialog(InputDevice *device, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ExtraProfileSettingsDialog)
 {
     ui->setupUi(this);
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
     setAttribute(Qt::WA_DeleteOnClose);
 
     this->device = device;
-    ui->pressValueLabel->setText(QString::number(0.10, 'g', 3).append("").append(trUtf8("s")));
 
+    ui->pressValueLabel->setText(QString::number(0.10, 'g', 3).append("").append(tr("s")));
     if (device->getDeviceKeyPressTime() > 0)
     {
         int temppress = device->getDeviceKeyPressTime();
         ui->keyPressHorizontalSlider->setValue(device->getDeviceKeyPressTime() / 10);
-        ui->pressValueLabel->setText(QString::number(temppress / 1000.0, 'g', 3).append("").append(trUtf8("s")));
+        ui->pressValueLabel->setText(QString::number(temppress / 1000.0, 'g', 3).append("").append(tr("s")));
     }
 
     if (!device->getProfileName().isEmpty())
+    {
         ui->profileNameLineEdit->setText(device->getProfileName());
+    }
 
-    connect(ui->keyPressHorizontalSlider, &QSlider::valueChanged, this, &ExtraProfileSettingsDialog::changeDeviceKeyPress);
-    connect(ui->profileNameLineEdit, &QLineEdit::textChanged, device, &InputDevice::setProfileName);
+    connect(ui->keyPressHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(changeDeviceKeyPress(int)));
+    connect(ui->profileNameLineEdit, SIGNAL(textChanged(QString)), device, SLOT(setProfileName(QString)));
 }
 
 ExtraProfileSettingsDialog::~ExtraProfileSettingsDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     delete ui;
 }
 
 void ExtraProfileSettingsDialog::changeDeviceKeyPress(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int temppress = value * 10;
     device->setDeviceKeyPressTime(temppress);
-    ui->pressValueLabel->setText(QString::number(temppress / 1000.0, 'g', 3).append("").append(trUtf8("s")));
-}
-
-InputDevice* ExtraProfileSettingsDialog::getDevice() const  {
-
-    return device;
+    ui->pressValueLabel->setText(QString::number(temppress / 1000.0, 'g', 3).append("").append(tr("s")));
 }

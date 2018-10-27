@@ -15,34 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QPushButton>
+
 #include "capturedwindowinfodialog.h"
 #include "ui_capturedwindowinfodialog.h"
 
-#include "messagehandler.h"
-
-#include <QPushButton>
-#include <QWidget>
-#include <QDebug>
-
 #ifdef Q_OS_WIN
 #include "winextras.h"
-#elif defined(Q_OS_UNIX)
+#else
 #include "x11extras.h"
 #endif
 
-
-
 #ifdef Q_OS_WIN
 CapturedWindowInfoDialog::CapturedWindowInfoDialog(QWidget *parent) :
-#elif defined(Q_OS_UNIX)
-CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent) :
+#else
+CapturedWindowInfoDialog::CapturedWindowInfoDialog(unsigned long window, QWidget *parent) :
 #endif
     QDialog(parent),
     ui(new Ui::CapturedWindowInfoDialog)
 {
     ui->setupUi(this);
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
     setAttribute(Qt::WA_DeleteOnClose);
 
     selectedMatch = WindowNone;
@@ -59,11 +51,9 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
     ui->winClassCheckBox->setVisible(false);
     ui->winClassLabel->setVisible(false);
     ui->winClassHeadLabel->setVisible(false);
-#elif defined(Q_OS_UNIX)
-
-    winClass = info->getWindowClass(static_cast<Window>(window));
+#else
+    winClass = info->getWindowClass(window);
     ui->winClassLabel->setText(winClass);
-
     if (winClass.isEmpty())
     {
         ui->winClassCheckBox->setEnabled(false);
@@ -81,12 +71,11 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
 
 #ifdef Q_OS_WIN
     winName = WinExtras::getCurrentWindowText();
-#elif defined(Q_OS_UNIX)
-    winName = info->getWindowTitle(static_cast<Window>(window));
+#else
+    winName = info->getWindowTitle(window);
 #endif
 
     ui->winTitleLabel->setText(winName);
-
     if (winName.isEmpty())
     {
         ui->winTitleCheckBox->setEnabled(false);
@@ -115,18 +104,15 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
         setRadioDefault = true;
     }
 
-#elif defined(Q_OS_UNIX)
-    int pid = info->getApplicationPid(static_cast<Window>(window));
-
+#elif defined(Q_OS_LINUX)
+    int pid = info->getApplicationPid(window);
     if (pid > 0)
     {
         QString exepath = X11Extras::getInstance()->getApplicationLocation(pid);
-
         if (!exepath.isEmpty())
         {
             ui->winPathLabel->setText(exepath);
             winPath = exepath;
-
             if (!setRadioDefault)
             {
                 ui->winTitleCheckBox->setChecked(true);
@@ -153,66 +139,62 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
         button->setEnabled(false);
     }
 
-    connect(this, &CapturedWindowInfoDialog::accepted, this, &CapturedWindowInfoDialog::populateOption);
+    connect(this, SIGNAL(accepted()), this, SLOT(populateOption()));
 }
 
 CapturedWindowInfoDialog::~CapturedWindowInfoDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     delete ui;
 }
 
 void CapturedWindowInfoDialog::populateOption()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (ui->winClassCheckBox->isChecked())
+    {
         selectedMatch = selectedMatch | WindowClass;
+    }
 
     if (ui->winTitleCheckBox->isChecked())
+    {
         selectedMatch = selectedMatch | WindowName;
+    }
 
     if (ui->winPathCheckBox->isChecked())
     {
         selectedMatch = selectedMatch | WindowPath;
 
-        if (ui->winPathChoiceComboBox->currentIndex() == 0) fullWinPath = true;
-        else fullWinPath = false;
+        if (ui->winPathChoiceComboBox->currentIndex() == 0)
+        {
+            fullWinPath = true;
+        }
+        else
+        {
+            fullWinPath = false;
+        }
     }
 }
 
 CapturedWindowInfoDialog::CapturedWindowOption CapturedWindowInfoDialog::getSelectedOptions()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return selectedMatch;
 }
 
 QString CapturedWindowInfoDialog::getWindowClass()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return winClass;
 }
 
 QString CapturedWindowInfoDialog::getWindowName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return winName;
 }
 
 QString CapturedWindowInfoDialog::getWindowPath()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return winPath;
 }
 
 bool CapturedWindowInfoDialog::useFullWindowPath()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return fullWinPath;
 }

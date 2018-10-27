@@ -17,15 +17,14 @@
 
 #include "antimicrosettings.h"
 
-#include "messagehandler.h"
-
-#include <QDebug>
-
+const bool AntiMicroSettings::defaultDisabledWinEnhanced = false;
+const bool AntiMicroSettings::defaultAssociateProfiles = true;
+const int AntiMicroSettings::defaultSpringScreen = -1;
+const unsigned int AntiMicroSettings::defaultSDLGamepadPollRate = 10;
 
 AntiMicroSettings::AntiMicroSettings(const QString &fileName, Format format, QObject *parent) :
     QSettings(fileName, format, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
 
 /**
@@ -37,14 +36,17 @@ AntiMicroSettings::AntiMicroSettings(const QString &fileName, Format format, QOb
  */
 QVariant AntiMicroSettings::runtimeValue(const QString &key, const QVariant &defaultValue) const
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QVariant settingValue;
     QString inGroup = group();
     QString fullKey = QString(inGroup).append("/").append(key);
-
-    if (cmdSettings.contains(fullKey)) settingValue = cmdSettings.value(fullKey, defaultValue);
-    else settingValue = value(key, defaultValue);
+    if (cmdSettings.contains(fullKey))
+    {
+        settingValue = cmdSettings.value(fullKey, defaultValue);
+    }
+    else
+    {
+        settingValue = value(key, defaultValue);
+    }
 
     return settingValue;
 }
@@ -58,30 +60,19 @@ QVariant AntiMicroSettings::runtimeValue(const QString &key, const QVariant &def
  */
 void AntiMicroSettings::importFromCommandLine(CommandLineUtility &cmdutility)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    getCmdSettings().clear();
+    cmdSettings.clear();
 
     if (cmdutility.isLaunchInTrayEnabled())
     {
-        getCmdSettings().setValue("LaunchInTray", 1);
+        cmdSettings.setValue("LaunchInTray", 1);
     }
     if (cmdutility.shouldMapController())
     {
-        getCmdSettings().setValue("DisplaySDLMapping", 1);
+        cmdSettings.setValue("DisplaySDLMapping", 1);
     }
 }
 
 QMutex* AntiMicroSettings::getLock()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return &lock;
-}
-
-QSettings& AntiMicroSettings::getCmdSettings() {
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return cmdSettings;
 }

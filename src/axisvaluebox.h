@@ -20,42 +20,25 @@
 
 #include <QWidget>
 
-class QResizeEvent;
-class QPaintEvent;
-class JoyAxis;
-
 class AxisValueBox : public QWidget
 {
     Q_OBJECT
 public:
-    explicit AxisValueBox(QWidget *parent = nullptr);
+    explicit AxisValueBox(QWidget *parent = 0);
 
     int getDeadZone();
     int getMaxZone();
     int getJoyValue();
     int getThrottle();
-    int getMinAxValue();
-    int getMaxAxValue();
 
 protected:
     virtual void resizeEvent(QResizeEvent *event);
     virtual void paintEvent(QPaintEvent *event);
-    
-public slots:
-    void setThrottle(int throttle);
-    void setValue(int value);
-    void setValue(JoyAxis* axis, int value);
-    void setDeadZone(int deadZone);
-    void setDeadZone(JoyAxis* axis, int deadZone);
-    void setMaxZone(int maxZone);
-    void setMaxZone(JoyAxis* axis, int deadZone);
 
-private:
-    JoyAxis* m_axis;
-    int m_deadZone;
-    int m_maxZone;
+    int deadZone;
+    int maxZone;
     int joyValue;
-    int m_throttle;
+    int throttle;
     int boxwidth;
     int boxheight;
     int lboxstart;
@@ -64,6 +47,14 @@ private:
     int rboxend;
     int singlewidth;
     int singleend;
+
+signals:
+    
+public slots:
+    void setThrottle(int throttle);
+    void setValue(int value);
+    void setDeadZone(int deadZone);
+    void setMaxZone(int maxZone);
 
 };
 

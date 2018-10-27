@@ -16,18 +16,11 @@
  */
 
 #include "dpadpushbutton.h"
-
-#include "messagehandler.h"
-#include "joydpad.h"
 #include "dpadcontextmenu.h"
-
-#include <QDebug>
 
 DPadPushButton::DPadPushButton(JoyDPad *dpad, bool displayNames, QWidget *parent) :
     FlashButtonWidget(displayNames, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->dpad = dpad;
 
     refreshLabel();
@@ -36,67 +29,54 @@ DPadPushButton::DPadPushButton(JoyDPad *dpad, bool displayNames, QWidget *parent
     tryFlash();
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &DPadPushButton::customContextMenuRequested, this, &DPadPushButton::showContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
 
-    connect(dpad, &JoyDPad::dpadNameChanged, this, &DPadPushButton::refreshLabel);
+    connect(dpad, SIGNAL(dpadNameChanged()), this, SLOT(refreshLabel()));
 }
 
-JoyDPad* DPadPushButton::getDPad() const
+JoyDPad* DPadPushButton::getDPad()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return dpad;
 }
 
 QString DPadPushButton::generateLabel()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString temp = QString();
-
-    if (!dpad->getDpadName().isEmpty()) temp.append(dpad->getName(false, ifDisplayNames()));
-    else temp.append(dpad->getName());
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-    qDebug() << "Dpad button name is: " << temp;
-    #endif
+    QString temp;
+    if (!dpad->getDpadName().isEmpty())
+    {
+        temp.append(dpad->getName(false, displayNames));
+    }
+    else
+    {
+        temp.append(dpad->getName());
+    }
 
     return temp;
 }
 
 void DPadPushButton::disableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    disconnect(dpad, &JoyDPad::active, this, &DPadPushButton::flash);
-    disconnect(dpad, &JoyDPad::released, this, &DPadPushButton::unflash);
-
+    disconnect(dpad, SIGNAL(active(int)), this, SLOT(flash()));
+    disconnect(dpad, SIGNAL(released(int)), this, SLOT(unflash()));
     this->unflash();
 }
 
 void DPadPushButton::enableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    connect(dpad, &JoyDPad::active, this, &DPadPushButton::flash, Qt::QueuedConnection);
-    connect(dpad, &JoyDPad::released, this, &DPadPushButton::unflash, Qt::QueuedConnection);
+    connect(dpad, SIGNAL(active(int)), this, SLOT(flash()), Qt::QueuedConnection);
+    connect(dpad, SIGNAL(released(int)), this, SLOT(unflash()), Qt::QueuedConnection);
 }
 
 void DPadPushButton::showContextMenu(const QPoint &point)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPoint globalPos = this->mapToGlobal(point);
     DPadContextMenu *contextMenu = new DPadContextMenu(dpad, this);
-
     contextMenu->buildMenu();
     contextMenu->popup(globalPos);
 }
 
 void DPadPushButton::tryFlash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (dpad->getCurrentDirection() != static_cast<int>(JoyDPadButton::DpadCentered))
     {
         flash();

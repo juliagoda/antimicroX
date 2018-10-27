@@ -18,20 +18,15 @@
 #ifndef GAMECONTROLLERMAPPINGDIALOG_H
 #define GAMECONTROLLERMAPPINGDIALOG_H
 
-
-#include "uihelpers/gamecontrollermappingdialoghelper.h"
-#include "gamecontroller/gamecontroller.h"
-
 #include <QDialog>
 #include <QHash>
 #include <QList>
-#include <QString>
+#include <QAbstractButton>
 
-
-class InputDevice;
-class AntiMicroSettings;
-class QWidget;
-class QAbstractButton;
+#include "uihelpers/gamecontrollermappingdialoghelper.h"
+#include "inputdevice.h"
+#include "gamecontroller/gamecontroller.h"
+#include "antimicrosettings.h"
 
 namespace Ui {
 class GameControllerMappingDialog;
@@ -42,7 +37,7 @@ class GameControllerMappingDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GameControllerMappingDialog(InputDevice *device, AntiMicroSettings *settings, QWidget *parent = nullptr);
+    explicit GameControllerMappingDialog(InputDevice *device, AntiMicroSettings *settings, QWidget *parent = 0);
     ~GameControllerMappingDialog();
 
     static QHash<int, QString> tempaliases;
@@ -59,6 +54,15 @@ protected:
 
     QString bindingString(SDL_GameControllerButtonBind bind);
     QList<QVariant> bindingValues(SDL_GameControllerButtonBind bind);
+
+    InputDevice *device;
+    AntiMicroSettings *settings;
+    unsigned int buttonGrabs;
+    QList<int> eventTriggerAxes;
+    QList<int> originalAxesDeadZones;
+    GameControllerMappingDialogHelper helper;
+    int currentDeadZoneValue;
+    bool usingGameController;
 
 private:
     Ui::GameControllerMappingDialog *ui;
@@ -79,20 +83,8 @@ private slots:
     void obliterate();
     void changeButtonDisplay();
     void changeAxisDeadZone(int index);
-    void updateLastAxisLineEdit(JoyAxis *tempAxis, int value);
+    void updateLastAxisLineEdit(int value);
     void updateLastAxisLineEditRaw(int index, int value);
-
-private:
-    GameControllerMappingDialogHelper& getHelperLocal();
-    QList<int>& getEventTriggerAxesLocal();
-
-    InputDevice *device;
-    AntiMicroSettings *settings;
-    int buttonGrabs; // unsigned
-    QList<int> eventTriggerAxes;
-    GameControllerMappingDialogHelper helper;
-    int currentDeadZoneValue;
-    bool usingGameController;
 };
 
 #endif // GAMECONTROLLERMAPPINGDIALOG_H

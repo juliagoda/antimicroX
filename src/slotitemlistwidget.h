@@ -19,20 +19,20 @@
 #define SLOTITEMLISTWIDGET_H
 
 #include <QListWidget>
-
-
-class QWidget;
-class QKeyEvent;
+#include <QKeyEvent>
 
 class SlotItemListWidget : public QListWidget
 {
     Q_OBJECT
-
 public:
-    explicit SlotItemListWidget(QWidget *parent = nullptr);
+    explicit SlotItemListWidget(QWidget *parent = 0);
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event);
+
+signals:
+
+public slots:
 
 };
 

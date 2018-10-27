@@ -17,16 +17,10 @@
 
 #include "virtualmousepushbutton.h"
 
-#include "messagehandler.h"
-
-#include <QDebug>
-
 VirtualMousePushButton::VirtualMousePushButton(QString displayText, int code, JoyButtonSlot::JoySlotInputAction mode, QWidget *parent) :
     QPushButton(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((mode == JoyButtonSlot::JoyMouseButton) || (mode == JoyButtonSlot::JoyMouseMovement))
+    if (mode == JoyButtonSlot::JoyMouseButton || mode == JoyButtonSlot::JoyMouseMovement)
     {
         this->setText(displayText);
 
@@ -57,32 +51,26 @@ VirtualMousePushButton::VirtualMousePushButton(QString displayText, int code, Jo
     }
     else
     {
-        this->setText(trUtf8("INVALID"));
+        this->setText(tr("INVALID"));
         this->code = 0;
         this->mode = JoyButtonSlot::JoyMouseButton;
     }
 
-    connect(this, &VirtualMousePushButton::clicked, this, &VirtualMousePushButton::createTempSlot);
+    connect(this, SIGNAL(clicked()), this, SLOT(createTempSlot()));
 }
 
-int VirtualMousePushButton::getMouseCode() const
+unsigned int VirtualMousePushButton::getMouseCode()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return code;
 }
 
-JoyButtonSlot::JoySlotInputAction VirtualMousePushButton::getMouseMode() const
+JoyButtonSlot::JoySlotInputAction VirtualMousePushButton::getMouseMode()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return mode;
 }
 
 void VirtualMousePushButton::createTempSlot()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     JoyButtonSlot *tempslot = new JoyButtonSlot(this->code, this->mode, this);
     emit mouseSlotCreated(tempslot);
 }

@@ -20,14 +20,11 @@
 
 #include <QDialog>
 
+#include "joybutton.h"
+#include "keyboard/virtualkeyboardmousewidget.h"
+#include "advancebuttondialog.h"
 #include "uihelpers/buttoneditdialoghelper.h"
 
-class JoyButton;
-class JoyButtonSlot;
-class QWidget;
-class QKeyEvent;
-class InputDevice;
-class QuickSetDialog;
 
 namespace Ui {
 class ButtonEditDialog;
@@ -38,33 +35,19 @@ class ButtonEditDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit ButtonEditDialog(JoyButton* button, InputDevice* joystick, QWidget *parent = nullptr); // called for chosen button
-    explicit ButtonEditDialog(InputDevice* joystick, QWidget *parent = nullptr); // Accessed by pressing the "Quick Set" button
+    explicit ButtonEditDialog(JoyButton *button, QWidget *parent = 0);
     ~ButtonEditDialog();
-
-    static ButtonEditDialog* getInstance();
-    JoyButton* getLastJoyButton();
-    void setUpLastJoyButton(JoyButton*);
-    void refreshForLastBtn();
-    void invokeMethodLastBtn(JoyButton* lastJoyBtn, ButtonEditDialogHelper* helper, const char* invokeString, int code, int alias, int index, JoyButtonSlot::JoySlotInputAction mode, bool withClear, bool withTrue, Qt::ConnectionType connTypeForAlias, Qt::ConnectionType connTypeForNothing, Qt::ConnectionType connTypeForAll);
     
 protected:
+    JoyButton *button;
+    bool ignoreRelease;
+    ButtonEditDialogHelper helper;
+
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void keyPressEvent(QKeyEvent *event);
 
 private:
-    ButtonEditDialogHelper helper;
     Ui::ButtonEditDialog *ui;
-    ButtonEditDialogHelper& getHelperLocal();
-
-    QTime buttonEventInterval;
-    InputDevice *joystick;
-    QuickSetDialog *currentQuickDialog;
-    bool ignoreRelease;
-    bool withoutQuickSetDialog;
-    JoyButton* lastJoyButton;
-
-    static ButtonEditDialog *instance;
 
 signals:
     void advancedDialogOpened();
@@ -72,16 +55,14 @@ signals:
     void keyGrabbed(JoyButtonSlot *tempslot);
     void selectionCleared();
     void selectionFinished();
-    void buttonDialogClosed();
 
 private slots:
-    void nullifyDialogPointer();
     void refreshSlotSummaryLabel();
     void changeToggleSetting();
     void changeTurboSetting();
     void openAdvancedDialog();
     void closedAdvancedDialog();
-    void createTempSlot(int keycode, int alias); // .., .., unsigned
+    void createTempSlot(int keycode, unsigned int alias);
 
     void checkTurboSetting(bool state);
     void setTurboButtonEnabled(bool state);

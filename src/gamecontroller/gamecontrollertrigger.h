@@ -18,22 +18,21 @@
 #ifndef GAMECONTROLLERTRIGGER_H
 #define GAMECONTROLLERTRIGGER_H
 
-#include "joyaxis.h"
-
 #include <QObject>
 #include <QString>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
+#include <SDL2/SDL_gamecontroller.h>
 
-class QXmlStreamReader;
-class QXmlStreamWriter;
-class SetJoystick;
+#include "gamecontrollertriggerbutton.h"
+#include <joyaxis.h>
 
 class GameControllerTrigger : public JoyAxis
 {
     Q_OBJECT
-
 public:
-    explicit GameControllerTrigger(int index, int originset, SetJoystick *parentSet, QObject *parent = nullptr);
+    explicit GameControllerTrigger(int index, int originset, SetJoystick *parentSet, QObject *parent = 0);
 
     virtual QString getXmlName();
     virtual QString getPartialName(bool forceFullFormat, bool displayNames);
@@ -46,10 +45,18 @@ public:
 
     virtual void writeConfig(QXmlStreamWriter *xml);
 
+    static const int AXISDEADZONE;
+    static const int AXISMAXZONE;
     static const ThrottleTypes DEFAULTTHROTTLE;
+
+    static const QString xmlName;
 
 protected:
     void correctJoystickThrottle();
+
+signals:
+
+public slots:
 
 };
 

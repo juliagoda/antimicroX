@@ -20,8 +20,7 @@
 
 #include <QDialog>
 
-class InputDevice;
-class QWidget;
+#include "inputdevice.h"
 
 namespace Ui {
 class ExtraProfileSettingsDialog;
@@ -32,15 +31,14 @@ class ExtraProfileSettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ExtraProfileSettingsDialog(InputDevice *device, QWidget *parent = nullptr);
+    explicit ExtraProfileSettingsDialog(InputDevice *device, QWidget *parent = 0);
     ~ExtraProfileSettingsDialog();
 
-    InputDevice* getDevice() const;
+protected:
+    InputDevice *device;
 
 private:
     Ui::ExtraProfileSettingsDialog *ui;
-
-    InputDevice *device;
 
 private slots:
     void changeDeviceKeyPress(int value);

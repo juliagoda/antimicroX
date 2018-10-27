@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>702</width>
-    <height>515</height>
+    <height>464</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -560,7 +560,7 @@ to a diagonal zone of the stick.</string>
               <number>90</number>
              </property>
              <property name="value">
-              <number>90</number>
+              <number>45</number>
              </property>
             </widget>
            </item>
@@ -751,7 +751,7 @@ functionality to an analog stick.</string>
          <item>
           <widget class="QLabel" name="stickNameLabel">
            <property name="text">
-            <string>Na&amp;me:</string>
+            <string>Name:</string>
            </property>
            <property name="buddy">
             <cstring>stickNameLineEdit</cstring>
@@ -774,7 +774,8 @@ functionality to an analog stick.</string>
          </property>
          <property name="icon">
           <iconset theme="edit-select">
-           <normaloff>.</normaloff>.</iconset>
+           <normaloff/>
+          </iconset>
          </property>
         </widget>
        </item>

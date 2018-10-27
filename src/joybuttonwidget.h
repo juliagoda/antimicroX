@@ -18,12 +18,10 @@
 #ifndef JOYBUTTONWIDGET_H
 #define JOYBUTTONWIDGET_H
 
-#include "flashbuttonwidget.h"
-
 #include <QPoint>
 
-class JoyButton;
-class QWidget;
+#include "flashbuttonwidget.h"
+#include "joybutton.h"
 
 class JoyButtonWidget : public FlashButtonWidget
 {
@@ -32,21 +30,22 @@ class JoyButtonWidget : public FlashButtonWidget
 public:
     explicit JoyButtonWidget(JoyButton* button, bool displayNames, QWidget *parent=0);
 
-    JoyButton* getJoyButton() const;
+    JoyButton* getJoyButton();
     void tryFlash();
 
 protected:
-    virtual QString generateLabel() override;
+    virtual QString generateLabel();
+
+    JoyButton* button;
+
+signals:
 
 public slots:
-    void disableFlashes() override;
-    void enableFlashes() override;
+    void disableFlashes();
+    void enableFlashes();
 
 private slots:
     void showContextMenu(const QPoint &point);
-
-private:
-    JoyButton* m_button;
 };
 
 #endif // JOYBUTTONWIDGET_H

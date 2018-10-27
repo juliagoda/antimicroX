@@ -20,42 +20,31 @@
 
 #include <QObject>
 #include <QTabWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QHash>
+#include <QString>
+#include <QLabel>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QMenu>
+#include <QAction>
 
-class JoyButton;
-class JoyButtonSlot;
-class VirtualKeyPushButton;
-
-class QVBoxLayout;
-class QPushButton;
-class QResizeEvent;
-class QWidget;
-class QMenu;
-class InputDevice;
-class QuickSetDialog;
-class ButtonEditDialogHelper;
+#include "virtualkeypushbutton.h"
+#include "virtualmousepushbutton.h"
+#include <joybutton.h>
+#include <advancebuttondialog.h>
 
 class VirtualKeyboardMouseWidget : public QTabWidget
 {
     Q_OBJECT
 
 public:
-    explicit VirtualKeyboardMouseWidget(InputDevice *joystick, ButtonEditDialogHelper* helper, QuickSetDialog* quickSetDialog = nullptr, JoyButton* button = nullptr, QWidget *parent = nullptr);
-    explicit VirtualKeyboardMouseWidget(QWidget *parent = nullptr);
+    explicit VirtualKeyboardMouseWidget(JoyButton *button, QWidget *parent = 0);
+    explicit VirtualKeyboardMouseWidget(QWidget *parent = 0);
     bool isKeyboardTabVisible();
-    bool is_numlock_activated();
-    bool isLaptop();
-
-    InputDevice *getJoystick() const;
-    ButtonEditDialogHelper* getHelper() const;
-    QWidget *getKeyboardTab() const;
-    QWidget *getMouseTab() const;
-    QPushButton *getNoneButton() const;
-    QPushButton *getMouseSettingsPushButton() const;
-    QMenu *getOtherKeysMenu() const;
-    QuickSetDialog* getCurrentQuickDialog() const;
-
-    static QHash<QString, QString> topRowKeys;
 
 protected:
     void setupVirtualKeyboardLayout();
@@ -71,49 +60,45 @@ protected:
 
     virtual void resizeEvent(QResizeEvent *event);
 
+    JoyButton *button;
+    QWidget *keyboardTab;
+    QWidget *mouseTab;
+    //QLabel *mouseHorizSpeedLabel;
+    //QLabel *mouseVertSpeedLabel;
+    //QSpinBox *mouseHorizSpeedSpinBox;
+    //QSpinBox *mouseVertSpeedSpinBox;
+    QPushButton *noneButton;
+    QPushButton *mouseSettingsPushButton;
+    //QCheckBox *mouseChangeTogether;
+    //QComboBox *mouseModeComboBox;
+    QMenu *otherKeysMenu;
+
+    static QHash<QString, QString> topRowKeys;
 
 signals:
     void selectionFinished();
     void selectionCleared();
-    void selectionMade(int keycode, int alias); // (.., unsigned)
+    void selectionMade(int keycode, unsigned int alias);
     void selectionMade(JoyButtonSlot *slot);
-    void buttonDialogClosed();
 
 public slots:
     void establishVirtualKeyboardSingleSignalConnections();
     void establishVirtualMouseSignalConnections();
     void establishVirtualKeyboardAdvancedSignalConnections();
     void establishVirtualMouseAdvancedSignalConnections();
-    void enableMouseSettingButton();
-    void disableMouseSettingButton();
 
 private slots:
-    void processSingleKeyboardSelection(int keycode, int alias); // (.., unsigned)
-    void processAdvancedKeyboardSelection(int keycode, int alias); // (.., unsigned)
+    void processSingleKeyboardSelection(int keycode, unsigned int alias);
+    void processAdvancedKeyboardSelection(int keycode, unsigned int alias);
     void processSingleMouseSelection(JoyButtonSlot *tempslot);
     void processAdvancedMouseSelection(JoyButtonSlot *tempslot);
     void clearButtonSlots();
     void clearButtonSlotsFinish();
     void openMouseSettingsDialog();
+    void enableMouseSettingButton();
     void setButtonFontSizes();
-    void otherKeysActionSingle(QAction* action, bool triggered);
-    void otherKeysActionAdvanced(QAction* action, bool triggered);
-    void nullifyDialogPointer();
-
-private:
-    bool isLaptopDevice;
-    bool withoutQuickSetDialog;
-    InputDevice *joystick;
-    JoyButton* lastPressedBtn;
-    ButtonEditDialogHelper* helper;
-    QWidget *keyboardTab;
-    QWidget *mouseTab;
-    QPushButton *noneButton;
-    QPushButton *mouseSettingsPushButton;
-    QMenu *otherKeysMenu;
-    QuickSetDialog* currentQuickDialog;
-
-
+    void otherKeysActionSingle(bool triggered);
+    void otherKeysActionAdvanced(bool triggered);
 };
 
 #endif // VIRTUALKEYBOARDMOUSEWIDGET_H

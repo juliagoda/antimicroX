@@ -15,23 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joycontrolstickbuttonpushbutton.h"
+#include <QMenu>
 
-#include "messagehandler.h"
-#include "joybuttontypes/joycontrolstickbutton.h"
-#include "joybuttontypes/joycontrolstickmodifierbutton.h"
+#include "joycontrolstickbuttonpushbutton.h"
 #include "joybuttoncontextmenu.h"
 #include "joycontrolstick.h"
-
-#include <QMenu>
-#include <QWidget>
-#include <QDebug>
 
 JoyControlStickButtonPushButton::JoyControlStickButtonPushButton(JoyControlStickButton *button, bool displayNames, QWidget *parent) :
     FlashButtonWidget(displayNames, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->button = button;
 
     refreshLabel();
@@ -40,60 +32,55 @@ JoyControlStickButtonPushButton::JoyControlStickButtonPushButton(JoyControlStick
     tryFlash();
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &JoyControlStickButtonPushButton::customContextMenuRequested, this, &JoyControlStickButtonPushButton::showContextMenu);
-    connect(button, &JoyControlStickButton::propertyUpdated, this, &JoyControlStickButtonPushButton::refreshLabel);
-    connect(button, &JoyControlStickButton::activeZoneChanged, this, &JoyControlStickButtonPushButton::refreshLabel);
-    connect(button->getStick()->getModifierButton(), &JoyControlStickModifierButton::activeZoneChanged,
-            this, &JoyControlStickButtonPushButton::refreshLabel);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
+
+    //connect(button, SIGNAL(slotsChanged()), this, SLOT(refreshLabel()));
+    connect(button, SIGNAL(propertyUpdated()), this, SLOT(refreshLabel()));
+    connect(button, SIGNAL(activeZoneChanged()), this, SLOT(refreshLabel()));
+    connect(button->getStick()->getModifierButton(), SIGNAL(activeZoneChanged()),
+            this, SLOT(refreshLabel()));
 }
 
 JoyControlStickButton* JoyControlStickButtonPushButton::getButton()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return button;
 }
 
 void JoyControlStickButtonPushButton::setButton(JoyControlStickButton *button)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     disableFlashes();
-    if (this->button != nullptr)
+    if (this->button)
     {
-        disconnect(button, &JoyControlStickButton::propertyUpdated, this, &JoyControlStickButtonPushButton::refreshLabel);
-        disconnect(this->button, &JoyControlStickButton::activeZoneChanged, this, &JoyControlStickButtonPushButton::refreshLabel);
+        //disconnect(this->button, SIGNAL(slotsChanged()), this, SLOT(refreshLabel()));
+        disconnect(button, SIGNAL(propertyUpdated()), this, SLOT(refreshLabel()));
+        disconnect(this->button, SIGNAL(activeZoneChanged()), this, SLOT(refreshLabel()));
     }
 
     this->button = button;
     refreshLabel();
     enableFlashes();
-
-    connect(button, &JoyControlStickButton::propertyUpdated, this, &JoyControlStickButtonPushButton::refreshLabel);
-    connect(button, &JoyControlStickButton::activeZoneChanged, this, &JoyControlStickButtonPushButton::refreshLabel, Qt::QueuedConnection);
+    //connect(button, SIGNAL(slotsChanged()), this, SLOT(refreshLabel()));
+    connect(button, SIGNAL(propertyUpdated()), this, SLOT(refreshLabel()));
+    connect(button, SIGNAL(activeZoneChanged()), this, SLOT(refreshLabel()), Qt::QueuedConnection);
 }
 
 
 void JoyControlStickButtonPushButton::disableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (button != nullptr)
+    if (button)
     {
-        disconnect(button, &JoyControlStickButton::clicked, this, &JoyControlStickButtonPushButton::flash);
-        disconnect(button, &JoyControlStickButton::released, this, &JoyControlStickButtonPushButton::unflash);
+        disconnect(button, SIGNAL(clicked(int)), this, SLOT(flash()));
+        disconnect(button, SIGNAL(released(int)), this, SLOT(unflash()));
     }
     this->unflash();
 }
 
 void JoyControlStickButtonPushButton::enableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (button != nullptr)
+    if (button)
     {
-        connect(button, &JoyControlStickButton::clicked, this, &JoyControlStickButtonPushButton::flash, Qt::QueuedConnection);
-        connect(button, &JoyControlStickButton::released, this, &JoyControlStickButtonPushButton::unflash, Qt::QueuedConnection);
+        connect(button, SIGNAL(clicked(int)), this, SLOT(flash()), Qt::QueuedConnection);
+        connect(button, SIGNAL(released(int)), this, SLOT(unflash()), Qt::QueuedConnection);
     }
 }
 
@@ -103,41 +90,24 @@ void JoyControlStickButtonPushButton::enableFlashes()
  */
 QString JoyControlStickButtonPushButton::generateLabel()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString temp = QString();
-    if (button != nullptr)
+    QString temp;
+    if (button)
     {
-        if (!button->getActionName().isEmpty() && ifDisplayNames())
+        if (!button->getActionName().isEmpty() && displayNames)
         {
-            #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Action name was not empty";
-            #endif
-
             temp = button->getActionName().replace("&", "&&");
-
         }
         else
         {
-            #ifndef QT_DEBUG_NO_OUTPUT
-            qDebug() << "Action name was empty";
-            #endif
-
             temp = button->getCalculatedActiveZoneSummary().replace("&", "&&");
         }
     }
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-    qDebug() << "Here is name of action for pushed stick button: " << temp;
-    #endif
 
     return temp;
 }
 
 void JoyControlStickButtonPushButton::showContextMenu(const QPoint &point)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPoint globalPos = this->mapToGlobal(point);
     JoyButtonContextMenu *contextMenu = new JoyButtonContextMenu(button, this);
     contextMenu->buildMenu();
@@ -146,8 +116,6 @@ void JoyControlStickButtonPushButton::showContextMenu(const QPoint &point)
 
 void JoyControlStickButtonPushButton::tryFlash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     if (button->getButtonState())
     {
         flash();

@@ -19,11 +19,11 @@ Default: ON. Compile the program with SDL 2 instead of SDL 1.2.
 
     -DAPPDATA
 
-Default: ON. Build the project with AppData support.
+Default: OFF. Build the project with AppData support.
 
     -DWITH_UINPUT
 
-Default: ON. Compile the program with uinput support.
+Default: OFF. Compile the program with uinput support.
 
     -DWITH_X11
 

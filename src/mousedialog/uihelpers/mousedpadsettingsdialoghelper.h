@@ -20,21 +20,21 @@
 
 #include <QObject>
 
-class JoyDPad;
-
+#include "joydpad.h"
+#include "joydpadbuttonwidget.h"
 
 class MouseDpadSettingsDialogHelper : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit MouseDpadSettingsDialogHelper(JoyDPad *dpad, QObject *parent = nullptr);
+    explicit MouseDpadSettingsDialogHelper(JoyDPad *dpad, QObject *parent = 0);
 
-    JoyDPad* getDPad() const;
-
-private:
+protected:
     JoyDPad *dpad;
 
+signals:
+
+public slots:
 };
 
 #endif // MOUSEDPADSETTINGSDIALOGHELPER_H

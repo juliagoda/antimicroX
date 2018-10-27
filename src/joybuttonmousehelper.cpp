@@ -15,21 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joybuttonmousehelper.h"
-
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "joybutton.h"
-
-#include <QDebug>
+//#include <QDebug>
 #include <QList>
-#include <QThread>
+
+#include "joybutton.h"
+#include "joybuttonmousehelper.h"
 
 JoyButtonMouseHelper::JoyButtonMouseHelper(QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     firstSpringEvent = false;
 }
 
@@ -38,15 +32,14 @@ JoyButtonMouseHelper::JoyButtonMouseHelper(QObject *parent) :
  */
 void JoyButtonMouseHelper::moveMouseCursor()
 {
-   // qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int finalx = 0;
     int finaly = 0;
     int elapsedTime = 5;
-    JoyButton::moveMouseCursor(finalx, finaly, elapsedTime, &GlobalVariables::JoyButton::mouseHistoryX, &GlobalVariables::JoyButton::mouseHistoryY, JoyButton::getTestOldMouseTime(), JoyButton::getStaticMouseEventTimer(), GlobalVariables::JoyButton::mouseRefreshRate, GlobalVariables::JoyButton::mouseHistorySize, JoyButton::getCursorXSpeeds(), JoyButton::getCursorYSpeeds(), GlobalVariables::JoyButton::cursorRemainderX, GlobalVariables::JoyButton::cursorRemainderY, GlobalVariables::JoyButton::weightModifier, GlobalVariables::JoyButton::IDLEMOUSEREFRESHRATE, JoyButton::getPendingMouseButtons());
-
-    if ((finalx != 0) || (finaly != 0))
+    JoyButton::moveMouseCursor(finalx, finaly, elapsedTime);
+    if (finalx != 0 || finaly != 0)
+    {
         emit mouseCursorMoved(finalx, finaly, elapsedTime);
+    }
 }
 
 /**
@@ -54,15 +47,14 @@ void JoyButtonMouseHelper::moveMouseCursor()
  */
 void JoyButtonMouseHelper::moveSpringMouse()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int finalx = 0;
     int finaly = 0;
     bool hasMoved = false;
-    JoyButton::moveSpringMouse(finalx, finaly, hasMoved, GlobalVariables::JoyButton::springModeScreen, JoyButton::getSpringXSpeeds(), JoyButton::getSpringYSpeeds(), JoyButton::getPendingMouseButtons(), GlobalVariables::JoyButton::mouseRefreshRate, GlobalVariables::JoyButton::IDLEMOUSEREFRESHRATE, JoyButton::getStaticMouseEventTimer());
-
+    JoyButton::moveSpringMouse(finalx, finaly, hasMoved);
     if (hasMoved)
+    {
         emit mouseSpringMoved(finalx, finaly);
+    }
 }
 
 /**
@@ -70,13 +62,10 @@ void JoyButtonMouseHelper::moveSpringMouse()
  */
 void JoyButtonMouseHelper::mouseEvent()
 {
-   // qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (!JoyButton::hasCursorEvents(JoyButton::getCursorXSpeeds(), JoyButton::getCursorYSpeeds()) && !JoyButton::hasSpringEvents(JoyButton::getSpringXSpeeds(), JoyButton::getSpringYSpeeds()))
+    if (!JoyButton::hasCursorEvents() && !JoyButton::hasSpringEvents())
     {
         QList<JoyButton*> *buttonList = JoyButton::getPendingMouseButtons();
         QListIterator<JoyButton*> iter(*buttonList);
-
         while (iter.hasNext())
         {
             JoyButton *temp = iter.next();
@@ -86,22 +75,19 @@ void JoyButtonMouseHelper::mouseEvent()
 
     moveMouseCursor();
 
-    if (JoyButton::hasSpringEvents(JoyButton::getSpringXSpeeds(), JoyButton::getSpringYSpeeds()))
+    if (JoyButton::hasSpringEvents())
     {
         moveSpringMouse();
     }
 
-    JoyButton::restartLastMouseTime(JoyButton::getTestOldMouseTime());
+    JoyButton::restartLastMouseTime();
     firstSpringEvent = false;
 }
 
 void JoyButtonMouseHelper::resetButtonMouseDistances()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QList<JoyButton*> *buttonList = JoyButton::getPendingMouseButtons();
     QListIterator<JoyButton*> iter(*buttonList);
-
     while (iter.hasNext())
     {
         JoyButton *temp = iter.next();
@@ -111,35 +97,25 @@ void JoyButtonMouseHelper::resetButtonMouseDistances()
 
 void JoyButtonMouseHelper::setFirstSpringStatus(bool status)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     firstSpringEvent = status;
 }
 
 bool JoyButtonMouseHelper::getFirstSpringStatus()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return firstSpringEvent;
 }
 
-void JoyButtonMouseHelper::carryGamePollRateUpdate(int pollRate)
+void JoyButtonMouseHelper::carryGamePollRateUpdate(unsigned int pollRate)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     emit gamepadRefreshRateUpdated(pollRate);
 }
 
-void JoyButtonMouseHelper::carryMouseRefreshRateUpdate(int refreshRate)
+void JoyButtonMouseHelper::carryMouseRefreshRateUpdate(unsigned int refreshRate)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     emit mouseRefreshRateUpdated(refreshRate);
 }
 
 void JoyButtonMouseHelper::changeThread(QThread *thread)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    JoyButton::setStaticMouseThread(thread, JoyButton::getStaticMouseEventTimer(), JoyButton::getTestOldMouseTime(), GlobalVariables::JoyButton::IDLEMOUSEREFRESHRATE, JoyButton::getMouseHelper());
+    JoyButton::setStaticMouseThread(thread);
 }

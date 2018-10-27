@@ -15,38 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "slotitemlistwidget.h"
-
-#include "messagehandler.h"
-#include "simplekeygrabberbutton.h"
-
 #include <QListWidgetItem>
-#include <QKeyEvent>
-#include <QWidget>
-#include <QDebug>
 
-
+#include "slotitemlistwidget.h"
+#include "simplekeygrabberbutton.h"
 
 SlotItemListWidget::SlotItemListWidget(QWidget *parent) :
     QListWidget(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
 }
 
 void SlotItemListWidget::keyPressEvent(QKeyEvent *event)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool propogate = true;
 
     QListWidgetItem *currentItem = this->item(this->currentRow());
-    SimpleKeyGrabberButton *tempbutton = nullptr;
-
-    if (currentItem != nullptr)
+    SimpleKeyGrabberButton *tempbutton = 0;
+    if (currentItem)
+    {
         tempbutton = currentItem->data(Qt::UserRole).value<SimpleKeyGrabberButton*>();
+    }
 
-    if (tempbutton != nullptr && tempbutton->isGrabbing())
+    if (tempbutton && tempbutton->isGrabbing())
     {
         switch (event->key())
         {
@@ -56,11 +46,11 @@ void SlotItemListWidget::keyPressEvent(QKeyEvent *event)
                 propogate = false;
                 break;
             }
-
-            default:
-            break;
         }
     }
 
-    if (propogate) QListWidget::keyPressEvent(event);
+    if (propogate)
+    {
+        QListWidget::keyPressEvent(event);
+    }
 }

@@ -18,13 +18,10 @@
 #ifndef JOYCONTROLSTICKEDITDIALOG_H
 #define JOYCONTROLSTICKEDITDIALOG_H
 
-
-#include "uihelpers/joycontrolstickeditdialoghelper.h"
-
 #include <QDialog>
 
-class JoyControlStick;
-class QWidget;
+#include "joycontrolstick.h"
+#include "uihelpers/joycontrolstickeditdialoghelper.h"
 
 namespace Ui {
 class JoyControlStickEditDialog;
@@ -35,18 +32,17 @@ class JoyControlStickEditDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit JoyControlStickEditDialog(JoyControlStick *stick, QWidget *parent = nullptr);
+    explicit JoyControlStickEditDialog(JoyControlStick *stick, QWidget *parent = 0);
     ~JoyControlStickEditDialog();
     
 protected:
     void selectCurrentPreset();
 
-private:
-    Ui::JoyControlStickEditDialog *ui;
-    JoyControlStickEditDialogHelper& getHelperLocal();
-
     JoyControlStick *stick;
     JoyControlStickEditDialogHelper helper;
+
+private:
+    Ui::JoyControlStickEditDialog *ui;
 
 private slots:
     void implementPresets(int index);

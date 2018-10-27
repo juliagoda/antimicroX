@@ -15,49 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <setjoystick.h>
+#include <inputdevice.h>
+
 #include "gamecontrollertriggerbutton.h"
 
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "setjoystick.h"
-#include "joyaxis.h"
-#include "inputdevice.h"
-
-#include <QXmlStreamReader>
-#include <QDebug>
-
+const QString GameControllerTriggerButton::xmlName = "triggerbutton";
 
 GameControllerTriggerButton::GameControllerTriggerButton(JoyAxis *axis, int index, int originset, SetJoystick *parentSet, QObject *parent) :
     JoyAxisButton(axis, index, originset, parentSet, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
-
 
 QString GameControllerTriggerButton::getXmlName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return GlobalVariables::GameControllerTriggerButton::xmlName;
+    return this->xmlName;
 }
-
 
 void GameControllerTriggerButton::readJoystickConfig(QXmlStreamReader *xml)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-
-    if (xml->isStartElement() && (xml->name() == GlobalVariables::JoyAxisButton::xmlName))
+    if (xml->isStartElement() && xml->name() == JoyAxisButton::xmlName)
     {
-        disconnect(this, &GameControllerTriggerButton::slotsChanged, m_parentSet->getInputDevice(), &InputDevice::profileEdited);
+        disconnect(this, SIGNAL(slotsChanged()), parentSet->getInputDevice(), SLOT(profileEdited()));
 
         xml->readNextStartElement();
-
-
-        while (!xml->atEnd() && (!xml->isEndElement() && (xml->name() != GlobalVariables::JoyAxisButton::xmlName)))
+        while (!xml->atEnd() && (!xml->isEndElement() && xml->name() != JoyAxisButton::xmlName))
         {
             bool found = readButtonConfig(xml);
-
             if (!found)
             {
                 xml->skipCurrentElement();
@@ -66,6 +50,6 @@ void GameControllerTriggerButton::readJoystickConfig(QXmlStreamReader *xml)
             xml->readNextStartElement();
         }
 
-        connect(this, &GameControllerTriggerButton::slotsChanged, m_parentSet->getInputDevice(), &InputDevice::profileEdited);
+        connect(this, SIGNAL(slotsChanged()), parentSet->getInputDevice(), SLOT(profileEdited()));
     }
 }

@@ -18,33 +18,29 @@
 #ifndef DPADCONTEXTMENUHELPER_H
 #define DPADCONTEXTMENUHELPER_H
 
-#include "joydpad.h"
-
 #include <QObject>
 #include <QHash>
 
-
-
-class JoyButtonSlot;
+#include "joydpad.h"
+#include "joybuttonslot.h"
 
 class DPadContextMenuHelper : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit DPadContextMenuHelper(JoyDPad *dpad, QObject *parent = nullptr);
+    explicit DPadContextMenuHelper(JoyDPad *dpad, QObject *parent = 0);
     void setPendingSlots(QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> *tempSlots);
     void clearPendingSlots();
-    QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> const& getPendingSlots();
+
+protected:
+    JoyDPad *dpad;
+    QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> pendingSlots;
+
+signals:
 
 public slots:
     void setFromPendingSlots();
     void clearButtonsSlotsEventReset();
-
-private:
-    JoyDPad *dpad;
-    QHash<JoyDPadButton::JoyDPadDirections, JoyButtonSlot*> pendingSlots;
-
 };
 
 #endif // DPADCONTEXTMENUHELPER_H

@@ -15,47 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "joybuttonstatusbox.h"
-
-#include "messagehandler.h"
-#include "joybutton.h"
-
-#include <QWidget>
 #include <QStyle>
-#include <QDebug>
+
+#include "joybuttonstatusbox.h"
 
 JoyButtonStatusBox::JoyButtonStatusBox(JoyButton *button, QWidget *parent) :
     QPushButton(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->button = button;
     isflashing = false;
 
     setText(QString::number(button->getRealJoyNumber()));
 
-    connect(button, &JoyButton::clicked, this, &JoyButtonStatusBox::flash);
-    connect(button, &JoyButton::released, this, &JoyButtonStatusBox::unflash);
+    connect(button, SIGNAL(clicked(int)), this, SLOT(flash()));
+    connect(button, SIGNAL(released(int)), this, SLOT(unflash()));
 }
 
-JoyButton* JoyButtonStatusBox::getJoyButton() const
+JoyButton* JoyButtonStatusBox::getJoyButton()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return button;
 }
 
 bool JoyButtonStatusBox::isButtonFlashing()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return isflashing;
 }
 
 void JoyButtonStatusBox::flash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     isflashing = true;
 
     this->style()->unpolish(this);
@@ -66,8 +53,6 @@ void JoyButtonStatusBox::flash()
 
 void JoyButtonStatusBox::unflash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     isflashing = false;
 
     this->style()->unpolish(this);

@@ -17,26 +17,15 @@
 
 #include "inputdevicebitarraystatus.h"
 
-#include "messagehandler.h"
-#include "inputdevice.h"
-#include "setjoystick.h"
-#include "joystick.h"
-#include "joydpad.h"
-#include "joybutton.h"
-
-#include <QDebug>
-
 InputDeviceBitArrayStatus::InputDeviceBitArrayStatus(InputDevice *device, bool readCurrent, QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    for (int i = 0; i < device->getNumberRawAxes(); i++)
+    for (int i=0; i < device->getNumberRawAxes(); i++)
     {
         SetJoystick *currentSet = device->getActiveSetJoystick();
         JoyAxis *axis = currentSet->getJoyAxis(i);
 
-        if ((axis != nullptr) && readCurrent)
+        if (axis && readCurrent)
         {
             axesStatus.append(!axis->inDeadZone(axis->getCurrentRawValue()) ? true : false);
         }
@@ -46,12 +35,11 @@ InputDeviceBitArrayStatus::InputDeviceBitArrayStatus(InputDevice *device, bool r
         }
     }
 
-    for (int i = 0; i < device->getNumberRawHats(); i++)
+    for (int i=0; i < device->getNumberRawHats(); i++)
     {
         SetJoystick *currentSet = device->getActiveSetJoystick();
         JoyDPad *dpad = currentSet->getJoyDPad(i);
-
-        if ((dpad != nullptr) && readCurrent)
+        if (dpad && readCurrent)
         {
             hatButtonStatus.append(dpad->getCurrentDirection() != JoyDPadButton::DpadCentered ? true : false);
         }
@@ -61,26 +49,23 @@ InputDeviceBitArrayStatus::InputDeviceBitArrayStatus(InputDevice *device, bool r
         }
     }
 
-    getButtonStatusLocal().resize(device->getNumberRawButtons());
-    getButtonStatusLocal().fill(0);
+    buttonStatus.resize(device->getNumberRawButtons());
+    buttonStatus.fill(0);
 
-    for (int i = 0; i < device->getNumberRawButtons(); i++)
+    for (int i=0; i < device->getNumberRawButtons(); i++)
     {
         SetJoystick *currentSet = device->getActiveSetJoystick();
         JoyButton *button = currentSet->getJoyButton(i);
-
-        if ((button != nullptr) && readCurrent)
+        if (button && readCurrent)
         {
-            getButtonStatusLocal().setBit(i, button->getButtonState());
+            buttonStatus.setBit(i, button->getButtonState());
         }
     }
 }
 
 void InputDeviceBitArrayStatus::changeAxesStatus(int axisIndex, bool value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((axisIndex >= 0) && (axisIndex <= axesStatus.size()))
+    if (axisIndex >= 0 && axisIndex <= axesStatus.size())
     {
         axesStatus.replace(axisIndex, value);
     }
@@ -88,19 +73,15 @@ void InputDeviceBitArrayStatus::changeAxesStatus(int axisIndex, bool value)
 
 void InputDeviceBitArrayStatus::changeButtonStatus(int buttonIndex, bool value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((buttonIndex >= 0) && (buttonIndex <= getButtonStatusLocal().size()))
+    if (buttonIndex >= 0 && buttonIndex <= buttonStatus.size())
     {
-        getButtonStatusLocal().setBit(buttonIndex, value);
+        buttonStatus.setBit(buttonIndex, value);
     }
 }
 
 void InputDeviceBitArrayStatus::changeHatStatus(int hatIndex, bool value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if ((hatIndex >= 0) && (hatIndex <= hatButtonStatus.size()))
+    if (hatIndex >= 0 && hatIndex <= hatButtonStatus.size())
     {
         hatButtonStatus.replace(hatIndex, value);
     }
@@ -108,28 +89,27 @@ void InputDeviceBitArrayStatus::changeHatStatus(int hatIndex, bool value)
 
 QBitArray InputDeviceBitArrayStatus::generateFinalBitArray()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
+    unsigned int totalArraySize = 0;
+    totalArraySize = axesStatus.size() + hatButtonStatus.size() + buttonStatus.size();
 
-    int totalArraySize = 0;
-    totalArraySize = axesStatus.size() + hatButtonStatus.size() + getButtonStatusLocal().size();
     QBitArray aggregateBitArray(totalArraySize, false);
-    int currentBit = 0;
+    unsigned int currentBit = 0;
 
-    for (int i = 0; i < axesStatus.size(); i++)
+    for (int i=0; i < axesStatus.size(); i++)
     {
         aggregateBitArray.setBit(currentBit, axesStatus.at(i));
         currentBit++;
     }
 
-    for (int i = 0; i < hatButtonStatus.size(); i++)
+    for (int i=0; i < hatButtonStatus.size(); i++)
     {
         aggregateBitArray.setBit(currentBit, hatButtonStatus.at(i));
         currentBit++;
     }
 
-    for (int i = 0; i < getButtonStatusLocal().size(); i++)
+    for (int i=0; i < buttonStatus.size(); i++)
     {
-        aggregateBitArray.setBit(currentBit, getButtonStatusLocal().at(i));
+        aggregateBitArray.setBit(currentBit, buttonStatus.at(i));
         currentBit++;
     }
 
@@ -138,18 +118,15 @@ QBitArray InputDeviceBitArrayStatus::generateFinalBitArray()
 
 void InputDeviceBitArrayStatus::clearStatusValues()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    for (int i = 0; i < axesStatus.size(); i++)
+    for (int i=0; i < axesStatus.size(); i++)
+    {
         axesStatus.replace(i, false);
+    }
 
-    for (int i = 0; i < hatButtonStatus.size(); i++)
+    for (int i=0; i < hatButtonStatus.size(); i++)
+    {
         hatButtonStatus.replace(i, false);
+    }
 
-    getButtonStatusLocal().fill(false);
-}
-
-QBitArray& InputDeviceBitArrayStatus::getButtonStatusLocal() {
-
-    return buttonStatus;
+    buttonStatus.fill(false);
 }

@@ -18,13 +18,10 @@
 #ifndef DPADEDITDIALOG_H
 #define DPADEDITDIALOG_H
 
-
-#include "uihelpers/dpadeditdialoghelper.h"
-
 #include <QDialog>
 
-class JoyDPad;
-class QWidget;
+#include "joydpad.h"
+#include "uihelpers/dpadeditdialoghelper.h"
 
 namespace Ui {
 class DPadEditDialog;
@@ -35,14 +32,17 @@ class DPadEditDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit DPadEditDialog(JoyDPad *dpad, QWidget *parent = nullptr);
+    explicit DPadEditDialog(JoyDPad *dpad, QWidget *parent = 0);
     ~DPadEditDialog();
-
-    JoyDPad* getDPad() const;
-    DPadEditDialogHelper const& getHelper();
 
 protected:
     void selectCurrentPreset();
+
+    JoyDPad *dpad;
+    DPadEditDialogHelper helper;
+
+private:
+    Ui::DPadEditDialog *ui;
 
 private slots:
     void implementPresets(int index);
@@ -52,14 +52,6 @@ private slots:
     void updateWindowTitleDPadName();
     void updateDPadDelaySpinBox(int value);
     void updateDPadDelaySlider(double value);
-
-private:
-    Ui::DPadEditDialog *ui;
-    DPadEditDialogHelper& getHelperLocal();
-
-    JoyDPad *dpad;
-    DPadEditDialogHelper helper;
-
 };
 
 #endif // DPADEDITDIALOG_H

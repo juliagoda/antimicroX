@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>706</width>
-    <height>627</height>
+    <height>578</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -55,7 +55,7 @@
         <bool>false</bool>
        </property>
        <property name="currentRow">
-        <number>-1</number>
+        <number>0</number>
        </property>
        <item>
         <property name="text">
@@ -110,7 +110,7 @@
            <item>
             <widget class="QLabel" name="label_2">
              <property name="text">
-              <string>Profile Direc&amp;tory:</string>
+              <string>Profi&amp;le Directory:</string>
              </property>
              <property name="buddy">
               <cstring>profileDefaultDirLineEdit</cstring>
@@ -655,11 +655,6 @@ Settings will not take affect until you either refresh all joysticks or unplug t
              <string>українська</string>
             </property>
            </item>
-           <item>
-            <property name="text">
-             <string>Polski</string>
-            </property>
-           </item>
           </widget>
          </item>
         </layout>
@@ -918,7 +913,7 @@ precise.</string>
               <item row="0" column="0">
                <widget class="QLabel" name="label_6">
                 <property name="text">
-                 <string>History Si&amp;ze:</string>
+                 <string>Histor&amp;y Size:</string>
                 </property>
                 <property name="buddy">
                  <cstring>historySizeSpinBox</cstring>
@@ -1205,7 +1200,7 @@ values used by the virtual mouse.</string>
            <x>10</x>
            <y>9</y>
            <width>481</width>
-           <height>36</height>
+           <height>31</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_17">
@@ -1230,7 +1225,7 @@ values used by the virtual mouse.</string>
            <x>9</x>
            <y>69</y>
            <width>481</width>
-           <height>34</height>
+           <height>31</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_18">
@@ -1294,37 +1289,14 @@ values used by the virtual mouse.</string>
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_19">
-     <property name="leftMargin">
-      <number>5</number>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-     <property name="topMargin">
-      <number>5</number>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
-     <property name="rightMargin">
-      <number>5</number>
-     </property>
-     <property name="bottomMargin">
-      <number>5</number>
-     </property>
-     <item>
-      <widget class="QPushButton" name="resetBtn">
-       <property name="text">
-        <string>Reset</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QDialogButtonBox" name="buttonBox">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    </widget>
    </item>
   </layout>
  </widget>

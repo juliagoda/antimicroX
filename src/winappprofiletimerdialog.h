@@ -13,11 +13,14 @@ class WinAppProfileTimerDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit WinAppProfileTimerDialog(QWidget *parent = nullptr);
+    explicit WinAppProfileTimerDialog(QWidget *parent = 0);
     ~WinAppProfileTimerDialog();
 
 protected:
     QTimer appTimer;
+
+//slots:
+//    void
 
 private:
     Ui::WinAppProfileTimerDialog *ui;

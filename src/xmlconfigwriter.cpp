@@ -15,54 +15,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "xmlconfigwriter.h"
-
-#include "messagehandler.h"
-#include "inputdevice.h"
-#include "common.h"
-
 #include <QDir>
-#include <QFile>
-#include <QXmlStreamWriter>
-#include <QDebug>
 
+#include "xmlconfigwriter.h"
 
 XMLConfigWriter::XMLConfigWriter(QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     xml = new QXmlStreamWriter();
     xml->setAutoFormatting(true);
-    configFile = nullptr;
-    m_joystick = nullptr;
+    configFile = 0;
+    joystick = 0;
     writerError = false;
 }
 
 XMLConfigWriter::~XMLConfigWriter()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (configFile != nullptr)
+    if (configFile)
     {
         if (configFile->isOpen())
+        {
             configFile->close();
+        }
 
         delete configFile;
-        configFile = nullptr;
+        configFile = 0;
     }
 
-    if (xml != nullptr)
+    if (xml)
     {
         delete xml;
-        xml = nullptr;
+        xml = 0;
     }
 }
 
 void XMLConfigWriter::write(InputDevice *joystick)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     writerError = false;
 
     if (!configFile->isOpen())
@@ -73,7 +61,7 @@ void XMLConfigWriter::write(InputDevice *joystick)
     else
     {
         writerError = true;
-        writerErrorString = trUtf8("Could not write to profile at %1.").arg(configFile->fileName());
+        writerErrorString = tr("Could not write to profile at %1.").arg(configFile->fileName());
     }
 
     if (!writerError)
@@ -84,13 +72,13 @@ void XMLConfigWriter::write(InputDevice *joystick)
     }
 
     if (configFile->isOpen())
+    {
         configFile->close();
+    }
 }
 
 void XMLConfigWriter::setFileName(QString filename)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QFile *temp = new QFile(filename);
     fileName = filename;
     configFile = temp;
@@ -98,34 +86,10 @@ void XMLConfigWriter::setFileName(QString filename)
 
 bool XMLConfigWriter::hasError()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return writerError;
 }
 
-const QString XMLConfigWriter::getErrorString()
+QString XMLConfigWriter::getErrorString()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return writerErrorString;
-}
-
-const QXmlStreamWriter *XMLConfigWriter::getXml() {
-
-    return xml;
-}
-
-QString const& XMLConfigWriter::getFileName() {
-
-    return fileName;
-}
-
-const QFile *XMLConfigWriter::getConfigFile() {
-
-    return configFile;
-}
-
-const InputDevice* XMLConfigWriter::getJoystick() {
-
-    return m_joystick;
 }

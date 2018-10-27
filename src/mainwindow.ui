@@ -84,7 +84,7 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="page1">
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -115,16 +115,7 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
         </sizepolicy>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
+        <property name="margin">
          <number>0</number>
         </property>
         <item>
@@ -192,7 +183,7 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
      <x>0</x>
      <y>0</y>
      <width>650</width>
-     <height>29</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuQuit">
@@ -209,7 +200,6 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
     <addaction name="actionProperties"/>
     <addaction name="actionKeyValue"/>
     <addaction name="actionGameController_Mapping"/>
-    <addaction name="actionCalibration"/>
     <addaction name="actionStick_Pad_Assign"/>
     <addaction name="actionOptions"/>
     <addaction name="actionUpdate_Joysticks"/>
@@ -219,7 +209,6 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
      <string>&amp;Help</string>
     </property>
     <addaction name="actionGitHubPage"/>
-    <addaction name="actionIssues"/>
     <addaction name="actionWiki"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
@@ -232,7 +221,8 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -247,7 +237,8 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
    </property>
    <property name="icon">
     <iconset theme="view-refresh">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Update Joysticks</string>
@@ -259,7 +250,8 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
   <action name="actionHide">
    <property name="icon">
     <iconset theme="view-restore">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Hide</string>
@@ -271,7 +263,8 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
   <action name="actionAbout">
    <property name="icon">
     <iconset theme="help-about">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;About</string>
@@ -282,17 +275,17 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
   </action>
   <action name="actionAbout_Qt">
    <property name="text">
-    <string>About &amp;Qt</string>
+    <string>About Qt</string>
    </property>
   </action>
   <action name="actionProperties">
    <property name="text">
-    <string>&amp;Properties</string>
+    <string>Properties</string>
    </property>
   </action>
   <action name="actionKeyValue">
    <property name="text">
-    <string>&amp;Key Checker</string>
+    <string>Key Checker</string>
    </property>
   </action>
   <action name="actionHomePage">
@@ -302,37 +295,27 @@ QPushButton#namesPushButton[isDisplayingNames=&quot;true&quot;] {
   </action>
   <action name="actionGitHubPage">
    <property name="text">
-    <string>&amp;GitHub Page</string>
+    <string>GitHub Page</string>
    </property>
   </action>
   <action name="actionGameController_Mapping">
    <property name="text">
-    <string>&amp;Game Controller Mapping</string>
+    <string>Game Controller Mapping</string>
    </property>
   </action>
   <action name="actionOptions">
    <property name="text">
-    <string>S&amp;ettings</string>
+    <string>Settings</string>
    </property>
   </action>
   <action name="actionStick_Pad_Assign">
    <property name="text">
-    <string>&amp;Stick/Pad Assign</string>
+    <string>Stick/Pad Assign</string>
    </property>
   </action>
   <action name="actionWiki">
    <property name="text">
-    <string>&amp;Wiki</string>
-   </property>
-  </action>
-  <action name="actionIssues">
-   <property name="text">
-    <string>&amp;Issues</string>
-   </property>
-  </action>
-  <action name="actionCalibration">
-   <property name="text">
-    <string>&amp;Calibration</string>
+    <string>Wiki</string>
    </property>
   </action>
  </widget>

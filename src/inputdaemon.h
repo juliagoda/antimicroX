@@ -18,26 +18,31 @@
 #ifndef INPUTDAEMONTHREAD_H
 #define INPUTDAEMONTHREAD_H
 
-#include "gamecontroller/gamecontroller.h"
-#include <SDL2/SDL_joystick.h>
-#include <SDL2/SDL_events.h>
-
 #include <QHash>
 #include <QMap>
+#include <QThread>
 #include <QQueue>
 
-class InputDevice;
-class AntiMicroSettings;
-class InputDeviceBitArrayStatus;
-class Joystick;
-class GameController;
-class SDLEventReader;
-class QThread;
+#ifdef USE_SDL_2
+#include <SDL2/SDL_joystick.h>
+#include <SDL2/SDL_events.h>
+#include "gamecontroller/gamecontroller.h"
+
+#else
+#include <SDL/SDL_joystick.h>
+#include <SDL/SDL_events.h>
+
+#endif
+
+#include "joystick.h"
+#include "sdleventreader.h"
+#include "antimicrosettings.h"
+#include "inputdevicebitarraystatus.h"
+
 
 class InputDaemon : public QObject
 {
     Q_OBJECT
-
 public:
     explicit InputDaemon (QMap<SDL_JoystickID, InputDevice*> *joysticks,
                           AntiMicroSettings *settings, bool graphical=true,
@@ -51,11 +56,34 @@ protected:
 
     void firstInputPass(QQueue<SDL_Event> *sdlEventQueue);
     void secondInputPass(QQueue<SDL_Event> *sdlEventQueue);
+#ifdef USE_SDL_2
     void modifyUnplugEvents(QQueue<SDL_Event> *sdlEventQueue);
     QBitArray createUnplugEventBitArray(InputDevice *device);
     Joystick* openJoystickDevice(int index);
+#endif
 
     void clearBitArrayStatusInstances();
+
+    QMap<SDL_JoystickID, InputDevice*> *joysticks;
+
+#ifdef USE_SDL_2
+    QHash<SDL_JoystickID, Joystick*> trackjoysticks;
+    QHash<SDL_JoystickID, GameController*> trackcontrollers;
+
+#endif
+
+    QHash<InputDevice*, InputDeviceBitArrayStatus*> releaseEventsGenerated;
+    QHash<InputDevice*, InputDeviceBitArrayStatus*> pendingEventValues;
+
+    bool stopped;
+    bool graphical;
+
+    SDLEventReader *eventWorker;
+    QThread *sdlWorkerThread;
+    AntiMicroSettings *settings;
+    QTimer pollResetTimer;
+
+    static const int GAMECONTROLLERTRIGGERRELEASE;
 
 signals:
     void joystickRefreshed (InputDevice *joystick);
@@ -63,10 +91,11 @@ signals:
     void complete(InputDevice *joystick);
     void complete();
 
+#ifdef USE_SDL_2
     void deviceUpdated(int index, InputDevice *device);
     void deviceRemoved(SDL_JoystickID deviceID);
     void deviceAdded(InputDevice *device);
-
+#endif
 
 public slots:
     void run();
@@ -76,35 +105,19 @@ public slots:
     void refreshJoysticks();
     void deleteJoysticks();
     void startWorker();
+
+#ifdef USE_SDL_2
     void refreshMapping(QString mapping, InputDevice *device);
     void removeDevice(InputDevice *device);
     void addInputDevice(int index);
     void refreshIndexes();
 
+#endif
+
 private slots:
     void stop();
     void resetActiveButtonMouseDistances();
-    void updatePollResetRate(int tempPollRate); //.., unsigned
-
-private:
-    QHash<SDL_JoystickID, Joystick*>& getTrackjoysticksLocal();
-    QHash<InputDevice*, InputDeviceBitArrayStatus*>& getReleaseEventsGeneratedLocal();
-    QHash<InputDevice*, InputDeviceBitArrayStatus*>& getPendingEventValuesLocal();
-
-    QMap<SDL_JoystickID, InputDevice*> *m_joysticks;
-    QHash<SDL_JoystickID, Joystick*> trackjoysticks;
-    QHash<SDL_JoystickID, GameController*> trackcontrollers;
-
-    QHash<InputDevice*, InputDeviceBitArrayStatus*> releaseEventsGenerated;
-    QHash<InputDevice*, InputDeviceBitArrayStatus*> pendingEventValues;
-
-    bool stopped;
-    bool m_graphical;
-
-    SDLEventReader *eventWorker;
-    QThread *sdlWorkerThread;
-    AntiMicroSettings *m_settings;
-    QTimer pollResetTimer;
+    void updatePollResetRate(unsigned int tempPollRate);
 };
 
 #endif // INPUTDAEMONTHREAD_H

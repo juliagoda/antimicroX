@@ -21,34 +21,31 @@
 #include <QPoint>
 
 #include "flashbuttonwidget.h"
-
-
-class JoyDPad;
-class QWidget;
+#include "joydpad.h"
 
 class DPadPushButton : public FlashButtonWidget
 {
     Q_OBJECT
 
 public:
-    explicit DPadPushButton(JoyDPad *dpad, bool displayNames, QWidget *parent = nullptr);
+    explicit DPadPushButton(JoyDPad *dpad, bool displayNames, QWidget *parent = 0);
 
-    JoyDPad* getDPad() const;
+    JoyDPad* getDPad();
     void tryFlash();
 
 protected:
-    QString generateLabel() override;
+    QString generateLabel();
+
+    JoyDPad *dpad;
+
+signals:
 
 public slots:
-    void disableFlashes() override;
-    void enableFlashes() override;
+    void disableFlashes();
+    void enableFlashes();
 
 private slots:
     void showContextMenu(const QPoint &point);
-
-private:
-    JoyDPad *dpad;
-
 };
 
 #endif // DPADPUSHBUTTON_H

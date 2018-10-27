@@ -17,64 +17,55 @@
 
 #include "joyaxiswidget.h"
 
-#include "messagehandler.h"
 #include "joyaxiscontextmenu.h"
-#include "joyaxis.h"
-
-#include <QDebug>
 
 JoyAxisWidget::JoyAxisWidget(JoyAxis *axis, bool displayNames, QWidget *parent) :
     FlashButtonWidget(displayNames, parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    m_axis = axis;
+    this->axis = axis;
 
     refreshLabel();
     enableFlashes();
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &JoyAxisWidget::customContextMenuRequested, this, &JoyAxisWidget::showContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
 
-    JoyAxisButton *nAxisButton = m_axis->getNAxisButton();
-    JoyAxisButton *pAxisButton = m_axis->getPAxisButton();
+    JoyAxisButton *nAxisButton = axis->getNAxisButton();
+    JoyAxisButton *pAxisButton = axis->getPAxisButton();
 
     tryFlash();
 
-    connect(m_axis, &JoyAxis::throttleChanged, this, &JoyAxisWidget::refreshLabel);
-    connect(m_axis, &JoyAxis::axisNameChanged, this, &JoyAxisWidget::refreshLabel);
-    connect(nAxisButton, &JoyAxisButton::propertyUpdated, this, &JoyAxisWidget::refreshLabel);
-    connect(pAxisButton, &JoyAxisButton::propertyUpdated, this, &JoyAxisWidget::refreshLabel);
-    connect(nAxisButton, &JoyAxisButton::activeZoneChanged, this, &JoyAxisWidget::refreshLabel);
-    connect(pAxisButton, &JoyAxisButton::activeZoneChanged, this, &JoyAxisWidget::refreshLabel);
+    connect(axis, SIGNAL(throttleChanged()), this, SLOT(refreshLabel()));
+    connect(axis, SIGNAL(axisNameChanged()), this, SLOT(refreshLabel()));
 
-    m_axis->establishPropertyUpdatedConnection();
+    //connect(nAxisButton, SIGNAL(slotsChanged()), this, SLOT(refreshLabel()));
+    //connect(pAxisButton, SIGNAL(slotsChanged()), this, SLOT(refreshLabel()));
+    connect(nAxisButton, SIGNAL(propertyUpdated()), this, SLOT(refreshLabel()));
+    connect(pAxisButton, SIGNAL(propertyUpdated()), this, SLOT(refreshLabel()));
+    connect(nAxisButton, SIGNAL(activeZoneChanged()), this, SLOT(refreshLabel()));
+    connect(pAxisButton, SIGNAL(activeZoneChanged()), this, SLOT(refreshLabel()));
+
+    axis->establishPropertyUpdatedConnection();
     nAxisButton->establishPropertyUpdatedConnections();
     pAxisButton->establishPropertyUpdatedConnections();
 }
 
-JoyAxis* JoyAxisWidget::getAxis() const
+JoyAxis* JoyAxisWidget::getAxis()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_axis;
+    return axis;
 }
 
 void JoyAxisWidget::disableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    disconnect(m_axis, &JoyAxis::active, this, &JoyAxisWidget::flash);
-    disconnect(m_axis, &JoyAxis::released, this, &JoyAxisWidget::unflash);
+    disconnect(axis, SIGNAL(active(int)), this, SLOT(flash()));
+    disconnect(axis, SIGNAL(released(int)), this, SLOT(unflash()));
     this->unflash();
 }
 
 void JoyAxisWidget::enableFlashes()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    connect(m_axis, &JoyAxis::active, this, &JoyAxisWidget::flash, Qt::QueuedConnection);
-    connect(m_axis, &JoyAxis::released, this, &JoyAxisWidget::unflash, Qt::QueuedConnection);
+    connect(axis, SIGNAL(active(int)), this, SLOT(flash()), Qt::QueuedConnection);
+    connect(axis, SIGNAL(released(int)), this, SLOT(unflash()), Qt::QueuedConnection);
 }
 
 /**
@@ -83,33 +74,23 @@ void JoyAxisWidget::enableFlashes()
  */
 QString JoyAxisWidget::generateLabel()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString temp = m_axis->getName(false, ifDisplayNames()).replace("&", "&&");
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "Name of joy axis is: " << temp;
-    #endif
-
+    QString temp;
+    temp = axis->getName(false, displayNames).replace("&", "&&");
     return temp;
 }
 
 void JoyAxisWidget::showContextMenu(const QPoint &point)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPoint globalPos = this->mapToGlobal(point);
-    JoyAxisContextMenu *contextMenu = new JoyAxisContextMenu(m_axis, this);
+    JoyAxisContextMenu *contextMenu = new JoyAxisContextMenu(axis, this);
     contextMenu->buildMenu();
     contextMenu->popup(globalPos);
 }
 
 void JoyAxisWidget::tryFlash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    JoyAxisButton *nAxisButton = m_axis->getNAxisButton();
-    JoyAxisButton *pAxisButton = m_axis->getPAxisButton();
+    JoyAxisButton *nAxisButton = axis->getNAxisButton();
+    JoyAxisButton *pAxisButton = axis->getPAxisButton();
 
     if (nAxisButton->getButtonState() || pAxisButton->getButtonState())
     {

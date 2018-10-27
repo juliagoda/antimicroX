@@ -17,43 +17,8 @@
 
 # Debian Wheezy has a package for version 2.8.9 so
 # that will be the minimum supported version.
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 2.8.9)
 project(antimicro)
-
-if(POLICY CMP0071)
-  cmake_policy(SET CMP0071 NEW)
-endif()
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" "${CMAKE_ROOT}/Modules")
-
-
-if (NOT WIN32)
-find_package(ECM REQUIRED CONFIG)
-endif(NOT WIN32)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-
-if (UNIX AND NOT APPLE)
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "force cmake prefix to be set for /usr" FORCE)
-endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-endif(UNIX AND NOT APPLE)
-
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-
-
-if(COMPILER_SUPPORTS_CXX11)
-    if (NOT WIN32)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -std=c++11")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    endif()
-else()
-    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-endif()
 
 if(WIN32)
     # Cause cmake to fail if Qt location is not specified.
@@ -67,24 +32,24 @@ endif(WIN32)
 
 # The version number.
 set(ANTIMICRO_MAJOR_VERSION 2)
-set(ANTIMICRO_MINOR_VERSION 24)
+set(ANTIMICRO_MINOR_VERSION 23)
 set(ANTIMICRO_PATCH_VERSION 0)
 
-option(USE_SDL_2 "Use SDL 2 libraries." ON)
+option(USE_SDL_2 "Use SDL 2 libraries rather than SDL 1." ON)
 
 if(UNIX)
     option(WITH_X11 "Compile with support for X11." ON)
-    option(WITH_UINPUT "Compile with support for uinput. uinput will be usable to simulate events." ON)
+    option(WITH_UINPUT "Compile with support for uinput. uinput will be usable to simulate events." OFF)
     option(WITH_XTEST "Compile with support for XTest.  XTest will be usable to simulate events." ON)
-    option(APPDATA "Build project with AppData file support." ON)
+    option(APPDATA "Build project with AppData file support." OFF)
 endif(UNIX)
 
 option(UPDATE_TRANSLATIONS "Call lupdate to update translation files from source." OFF)
 option(TRANS_KEEP_OBSOLETE "Do not specify -no-obsolete when calling lupdate." OFF)
 
-
 if(WIN32)
     option(PORTABLE_PACKAGE "Create portable Windows package" OFF)
+    #option(TARGET_ARCH "Choose which version of some libraries to use. (x86, x86_64)" "x86")
     option(WITH_VMULTI "Compile with support for vmulti." OFF)
     option(PERFORM_SIGNING "Sign final executable." OFF)
 
@@ -109,6 +74,14 @@ if(WIN32)
         set(TARGET_ARCH "x86")
     endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
+    #if(TARGET_ARCH)
+    #    set(ARCH_OPTIONS "x86" "x86_64")
+    #    list(FIND ARCH_OPTIONS ${TARGET_ARCH} ARCH_INDEX)
+    #    if(ARCH_INDEX EQUAL -1)
+    #        message(FATAL_ERROR "No valid architecture choice used. Exiting.")
+    #    endif(ARCH_INDEX EQUAL -1)
+    #endif(TARGET_ARCH)
+
     if(WITH_VMULTI)
         add_definitions(-DWITH_VMULTI)
     endif(WITH_VMULTI)
@@ -121,6 +94,8 @@ if(UNIX)
 
     if(USE_SDL_2)
         pkg_check_modules(SDL2 REQUIRED sdl2)
+    elseif(NOT USE_SDL_2)
+        pkg_check_modules(SDL REQUIRED sdl)
     endif(USE_SDL_2)
 
     if(WITH_X11)
@@ -145,13 +120,8 @@ if(UNIX)
     endif(NOT WITH_XTEST AND NOT WITH_UINPUT)
 endif(UNIX)
 
-set(antimicro_MAIN
-    src/main.cpp
-    )
-
-set(antimicro_SOURCES
+set(antimicro_SOURCES src/main.cpp
     src/mainwindow.cpp
-    src/messagehandler.cpp
     src/joybuttonwidget.cpp
     src/joystick.cpp
     src/joybutton.cpp
@@ -245,13 +215,9 @@ set(antimicro_SOURCES
     src/mousedialog/uihelpers/mousebuttonsettingsdialoghelper.cpp
     src/mousedialog/uihelpers/mousecontrolsticksettingsdialoghelper.cpp
     src/mousedialog/uihelpers/mousedpadsettingsdialoghelper.cpp
-    src/calibration.cpp
-    src/globalvariables.cpp
 )
 
-set(antimicro_HEADERS
-    src/mainwindow.h
-    src/messagehandler.h
+set(antimicro_HEADERS src/mainwindow.h
     src/joybuttonwidget.h
     src/joystick.h
     src/joybutton.h
@@ -343,8 +309,6 @@ set(antimicro_HEADERS
     src/mousedialog/uihelpers/mousebuttonsettingsdialoghelper.h
     src/mousedialog/uihelpers/mousecontrolsticksettingsdialoghelper.h
     src/mousedialog/uihelpers/mousedpadsettingsdialoghelper.h
-    src/calibration.h
-    src/globalvariables.h
 )
 
 set(antimicro_FORMS src/mainwindow.ui
@@ -367,7 +331,6 @@ set(antimicro_FORMS src/mainwindow.ui
     src/editalldefaultautoprofiledialog.ui
     src/extraprofilesettingsdialog.ui
     src/capturedwindowinfodialog.ui
-    src/calibration.ui
 )
 
 set(antimicro_RESOURCES src/resources.qrc)
@@ -455,6 +418,50 @@ elseif(WIN32)
     endif(WITH_VMULTI)
 endif(UNIX)
 
+set(USE_QT5 OFF)
+set(USE_QT4 OFF)
+
+if(UNIX)
+    # Check if Qt 4 or 5 was specified using an environment variable
+    # or by specifying -DQT_QMAKE_EXECUTABLE.
+    # Otherwise, check for Qt libraries.
+    if("$ENV{QT_SELECT}" EQUAL 5)
+        set(USE_QT5 ON)
+    elseif(QT_QMAKE_EXECUTABLE MATCHES ".*/qmake-qt5")
+        set(USE_QT5 ON)
+    elseif ("$ENV{QT_SELECT}" EQUAL 4)
+        set(USE_QT4 ON)
+    elseif(QT_QMAKE_EXECUTABLE MATCHES ".*/qmake-qt4")
+        set(USE_QT4 ON)
+    else()
+        find_package(Qt5Core QUIET)
+        if(Qt5Core_FOUND)
+            set(USE_QT5 ON)
+        else()
+            find_package(Qt4 QUIET)
+            if(QT_FOUND)
+                set(USE_QT4 ON)
+            else()
+                message(FATAL_ERROR "No Qt libraries could be found.")
+            endif(QT_FOUND)
+        endif(Qt5Core_FOUND)
+    endif("$ENV{QT_SELECT}" EQUAL 5)
+elseif(WIN32)
+    # Use Qt5 on Windows.
+    set(USE_QT5 ON)
+endif(UNIX)
+
+if(USE_QT5)
+    message("Compiling with Qt5 support")
+elseif(USE_QT4)
+    message("Compiling with Qt4 support")
+    if(NOT WITH_X11)
+        message(FATAL_ERROR "Cannot build application using Qt4 without X11 support.")
+    endif(NOT WITH_X11)
+else()
+    message(FATAL_ERROR "No Qt version was specified.")
+endif(USE_QT5)
+
 if(USE_SDL_2)
     add_definitions(-DUSE_SDL_2)
 endif(USE_SDL_2)
@@ -480,6 +487,11 @@ if(UNIX)
 endif(UNIX)
 
 if (UNIX)
+    if (USE_QT5)
+        # Find includes in corresponding build directories
+        #set(CMAKE_INCLUDE_CURRENT_DIR ON)
+        # Instruct CMake to run moc automatically when needed.
+        set(CMAKE_AUTOMOC ON)
 
         find_package(Qt5Widgets REQUIRED)
         find_package(Qt5Core REQUIRED)
@@ -492,9 +504,45 @@ if (UNIX)
         QT5_ADD_RESOURCES(antimicro_RESOURCES_RCC ${antimicro_RESOURCES})
         add_subdirectory("share/antimicro/translations")
 
+        include_directories(${Qt5Widgets_INCLUDE_DIRS})
+        add_definitions(${Qt5Widgets_DEFINITIONS})
+        include_directories(${Qt5Core_INCLUDE_DIRS})
+        add_definitions(${Qt5Core_DEFINITIONS})
+        include_directories(${Qt5Gui_INCLUDE_DIRS})
+        add_definitions(${Qt5Gui_DEFINITIONS})
+        include_directories(${Qt5Network_INCLUDE_DIRS})
+        add_definitions(${Qt5Network_DEFINITIONS})
+
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+        # Add compiler flags for building executables (-fPIE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+
+        LIST(APPEND LIBS ${Qt5Widgets_LIBRARIES}
+            ${Qt5Core_LIBRARIES}
+            ${Qt5Gui_LIBRARIES}
+            ${Qt5Network_LIBRARIES}
+        )
+    else()
+        find_package(Qt4 REQUIRED)
+        set(QT_USE_QTNETWORK TRUE)
+
+        QT4_WRAP_CPP(antimicro_HEADERS_MOC ${antimicro_HEADERS})
+        QT4_WRAP_UI(antimicro_FORMS_HEADERS ${antimicro_FORMS})
+        QT4_ADD_RESOURCES(antimicro_RESOURCES_RCC ${antimicro_RESOURCES})
+
+        add_subdirectory("share/antimicro/translations")
+
+        include(${QT_USE_FILE})
+        add_definitions(${QT_DEFINITIONS})
+        list(APPEND LIBS ${QT_LIBRARIES})
+    endif(USE_QT5)
+
 elseif(WIN32)
+    # Find includes in corresponding build directories
+    #set(CMAKE_INCLUDE_CURRENT_DIR ON)
+    # Instruct CMake to run moc automatically when needed.
+    set(CMAKE_AUTOMOC ON)
 
     find_package(Qt5Widgets REQUIRED)
     find_package(Qt5Core REQUIRED)
@@ -507,8 +555,25 @@ elseif(WIN32)
     QT5_ADD_RESOURCES(antimicro_RESOURCES_RCC ${antimicro_RESOURCES})
     add_subdirectory("share/antimicro/translations")
 
+    include_directories(${Qt5Widgets_INCLUDE_DIRS})
+    add_definitions(${Qt5Widgets_DEFINITIONS})
+    include_directories(${Qt5Core_INCLUDE_DIRS})
+    add_definitions(${Qt5Core_DEFINITIONS})
+    include_directories(${Qt5Gui_INCLUDE_DIRS})
+    add_definitions(${Qt5Gui_DEFINITIONS})
+    include_directories(${Qt5Network_INCLUDE_DIRS})
+    add_definitions(${Qt5Network_DEFINITIONS})
+
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+    # Add compiler flags for building executables (-fPIE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+
+    LIST(APPEND LIBS ${Qt5Widgets_LIBRARIES}
+        ${Qt5Core_LIBRARIES}
+        ${Qt5Gui_LIBRARIES}
+        ${Qt5Network_LIBRARIES}
+    )
 endif(UNIX)
 
 if(UNIX)
@@ -523,14 +588,64 @@ if(UNIX)
 
     if(USE_SDL_2)
         list(APPEND LIBS ${SDL2_LIBRARIES})
+    else()
+        list(APPEND LIBS ${SDL_LIBRARIES})
     endif(USE_SDL_2)
 elseif (WIN32)
     if(USE_SDL_2)
-    
-        if(SDL2_LIBRARY_DIR AND SDL2_INCLUDE_DIR)
-            list(APPEND LIBS ${SDL2_LIBRARY})
-            include_directories(${SDL2_INCLUDE_DIR})
-        endif(SDL2_LIBRARY_DIR AND SDL2_INCLUDE_DIR)
+        set(SDL2_LIBRARY "")
+        set(SDL2_LIBRARY_DIR "")
+        set(SDL2_INCLUDE_DIR "")
+        set(SDL2_DLL_LOCATION_DIR "")
+
+        if (MSYS OR MINGW)
+            find_package(PkgConfig QUIET)
+            if(PKG_CONFIG_FOUND)
+                #include(FindPkgConfig)
+
+                pkg_check_modules(SDL2 QUIET sdl2)
+                if(SDL2_FOUND)
+                    #find_path(SDL2_INCLUDE_DIR "SDL2/SDL.h" HINTS ${SDL2_INCLUDE_DIRS})
+
+                    set(SDL2_LIBRARY ${SDL2_LIBRARIES})
+                    set(SDL2_LIBRARY_DIR ${SDL2_LIBRARY_DIRS})
+                    set(SDL2_INCLUDE_DIR ${SDL2_INCLUDE_DIRS})
+                    unset(SDL2_DLL_LOCATION_DIR)
+                    find_path(SDL2_DLL_LOCATION_DIR "SDL2.dll" HINTS "${SDL2_LIBRARY_DIRS}/../bin")
+                    #set(SDL2_DLL_LOCATION_DIR "${SDL2_LIBRARY_DIRS}/../bin")
+
+                    list(APPEND LIBS ${SDL2_LIBRARIES})
+                endif(SDL2_FOUND)
+            endif(PKG_CONFIG_FOUND)
+        endif(MSYS OR MINGW)
+
+        if (NOT SDL2_LIBRARY)
+            # Perform extra voodoo to get proper library paths and include
+            # proper headers.
+	    file(GLOB SDL2_BASE_DIR "${PROJECT_SOURCE_DIR}/SDL2-*.*.*/")
+
+	    if (SDL2_BASE_DIR)
+                unset(SDL2_LIBRARY)
+
+                if(TARGET_ARCH STREQUAL "x86_64")
+                    set(SDL2_LIBRARY_DIR "${SDL2_BASE_DIR}/x86_64-w64-mingw32/lib")
+                    set(SDL2_INCLUDE_DIR "${SDL2_BASE_DIR}/x86_64-w64-mingw32/include")
+                    set(SDL2_DLL_LOCATION_DIR "${SDL2_BASE_DIR}/x86_64-w64-mingw32/bin")
+
+                    find_library(SDL2_LIBRARY SDL2 ${SDL2_LIBRARY_DIR})
+                    list(APPEND LIBS ${SDL2_LIBRARY})
+                    include_directories(${SDL2_INCLUDE_DIR})
+                else()
+                    set(SDL2_LIBRARY_DIR "${SDL2_BASE_DIR}/i686-w64-mingw32/lib")
+                    set(SDL2_INCLUDE_DIR "${SDL2_BASE_DIR}/i686-w64-mingw32/include")
+                    set(SDL2_DLL_LOCATION_DIR "${SDL2_BASE_DIR}/i686-w64-mingw32/bin")
+
+                    find_library(SDL2_LIBRARY SDL2 ${SDL2_LIBRARY_DIR})
+                    list(APPEND LIBS ${SDL2_LIBRARY})
+                    include_directories(${SDL2_INCLUDE_DIR})
+                endif(TARGET_ARCH STREQUAL "x86_64")
+	    endif(SDL2_BASE_DIR)  
+        endif(NOT SDL2_LIBRARY)
 
         add_definitions(-DUNICODE -D_UNICODE)
     endif(USE_SDL_2)
@@ -543,33 +658,33 @@ elseif (WIN32)
     endif(WITH_VMULTI)
 endif (UNIX)
 
-
-include_directories(
-    ${CMAKE_CURRENT_BINARY_DIR}
-    "${CMAKE_CURRENT_BINARY_DIR}/src"
-    ${PROJECT_SOURCE_DIR}
-    "${PROJECT_SOURCE_DIR}/src"
-    )
-
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories("${PROJECT_SOURCE_DIR}/src")
 
 if(UNIX)
     # Store executable in a bin subdir. Needed here so translations can be loaded.
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 endif(UNIX)
 
-
+if(USE_QT5)
 
     if(UNIX)
-        add_executable(antimicro ${antimicro_MAIN} ${antimicro_HEADERS_MOC} ${antimicro_SOURCES} ${antimicro_FORMS_HEADERS} ${antimicro_RESOURCES_RCC})
-        target_link_libraries (antimicro Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
+            add_executable(antimicro ${antimicro_MAIN} ${antimicro_HEADERS_MOC} ${antimicro_SOURCES} ${antimicro_FORMS_HEADERS} ${antimicro_RESOURCES_RCC})
+            target_link_libraries (antimicro Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
     elseif(WIN32)
-        # The WIN32 is required to specify a GUI application.
-        add_executable(antimicro ${antimicro_MAIN} ${antimicro_HEADERS_MOC} ${antimicro_SOURCES} ${antimicro_FORMS_HEADERS} ${antimicro_RESOURCES_RCC} src/antimicro.rc)
-        target_link_libraries (antimicro Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
+            # The WIN32 is required to specify a GUI application.
+            add_executable(antimicro ${antimicro_MAIN} ${antimicro_HEADERS_MOC} ${antimicro_SOURCES} ${antimicro_FORMS_HEADERS} ${antimicro_RESOURCES_RCC} src/antimicro.rc)
+            target_link_libraries (antimicro Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
     endif(UNIX)
 
-    target_compile_definitions(antimicro PUBLIC QT_DEBUG_NO_OUTPUT) # should be commented during development
+else()
+    add_executable(antimicro ${antimicro_SOURCES}
+        ${antimicro_HEADERS_MOC}
+        ${antimicro_FORMS_HEADERS}
+        ${antimicro_RESOURCES_RCC}
+    )
 
+endif(USE_QT5)
 
 # Add link libraries.
 #message(${LIBS})
@@ -625,6 +740,18 @@ configure_file(
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Changelog DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 if(WIN32)
+    #if(TARGET_ARCH STREQUAL "x86_64")
+    #    # Copy SDL2.dll to find installation directory.
+    #    add_custom_target(copy_sdl_dll
+    #        COMMAND ${CMAKE_COMMAND} -E copy "${SDL2_BASE_DIR}/x86_64-w64-mingw32/bin/SDL2.dll" ${CMAKE_CURRENT_BINARY_DIR}
+    #    )
+    #else()
+    #    # Copy SDL2.dll to find installation directory.
+    #    add_custom_target(copy_sdl_dll
+    #        COMMAND ${CMAKE_COMMAND} -E copy "${SDL2_BASE_DIR}/i686-w64-mingw32/bin/SDL2.dll" ${CMAKE_CURRENT_BINARY_DIR}
+    #    )
+    #endif(TARGET_ARCH STREQUAL "x86_64")
+
     add_custom_target(copy_sdl_dll
         COMMAND ${CMAKE_COMMAND} -E copy "${SDL2_DLL_LOCATION_DIR}/SDL2.dll" ${CMAKE_CURRENT_BINARY_DIR}
     )

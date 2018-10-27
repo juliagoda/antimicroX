@@ -22,15 +22,13 @@
 #include <QList>
 #include <QBitArray>
 
-
-class InputDevice;
+#include "inputdevice.h"
 
 class InputDeviceBitArrayStatus : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit InputDeviceBitArrayStatus(InputDevice *device, bool readCurrent = true, QObject *parent = nullptr);
+    explicit InputDeviceBitArrayStatus(InputDevice *device, bool readCurrent = true, QObject *parent = 0);
 
     void changeAxesStatus(int axisIndex, bool value);
     void changeButtonStatus(int buttonIndex, bool value);
@@ -39,12 +37,14 @@ public:
     QBitArray generateFinalBitArray();
     void clearStatusValues();
 
-private:
-    QBitArray& getButtonStatusLocal();
-
+protected:
     QList<bool> axesStatus;
     QList<bool> hatButtonStatus;
     QBitArray buttonStatus;
+
+signals:
+
+public slots:
 
 };
 

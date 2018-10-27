@@ -17,71 +17,45 @@
 
 #include "xtesteventhandler.h"
 
-#include "globalvariables.h"
-#include "joybuttonslot.h"
-#include "antkeymapper.h"
-#include "messagehandler.h"
-
 #include <QApplication>
-#include <QDebug>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
 #include <X11/extensions/XTest.h>
-
-#include "x11extras.h"
-
+#include <x11extras.h>
+#include <antkeymapper.h>
 
 XTestEventHandler::XTestEventHandler(QObject *parent) :
     BaseEventHandler(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
-
-
-XTestEventHandler::~XTestEventHandler()
-{
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-}
-
 
 bool XTestEventHandler::init()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     X11Extras *instance = X11Extras::getInstance();
-
-    if (instance != nullptr)
+    if (instance)
     {
-        instance->x11ResetMouseAccelerationChange(GlobalVariables::X11Extras::xtestMouseDeviceName);
+        instance->x11ResetMouseAccelerationChange(X11Extras::xtestMouseDeviceName);
     }
 
     return true;
 }
 
-
 bool XTestEventHandler::cleanup()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return true;
 }
 
-
 void XTestEventHandler::sendKeyboardEvent(JoyButtonSlot *slot, bool pressed)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Display* display = X11Extras::getInstance()->display();
     JoyButtonSlot::JoySlotInputAction device = slot->getSlotMode();
-
     int code = slot->getSlotCode();
 
     if (device == JoyButtonSlot::JoyKeyboard)
     {
-        int tempcode = XKeysymToKeycode(display, static_cast<KeySym>(code));
-
+        unsigned int tempcode = XKeysymToKeycode(display, code);
         if (tempcode > 0)
         {
             XTestFakeKeyEvent(display, tempcode, pressed, 0);
@@ -90,14 +64,10 @@ void XTestEventHandler::sendKeyboardEvent(JoyButtonSlot *slot, bool pressed)
     }
 }
 
-
 void XTestEventHandler::sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Display* display = X11Extras::getInstance()->display();
     JoyButtonSlot::JoySlotInputAction device = slot->getSlotMode();
-
     int code = slot->getSlotCode();
 
     if (device == JoyButtonSlot::JoyMouseButton)
@@ -107,93 +77,108 @@ void XTestEventHandler::sendMouseButtonEvent(JoyButtonSlot *slot, bool pressed)
     }
 }
 
-
 void XTestEventHandler::sendMouseEvent(int xDis, int yDis)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Display* display = X11Extras::getInstance()->display();
     XTestFakeRelativeMotionEvent(display, xDis, yDis, 0);
     XFlush(display);
 }
 
-
 void XTestEventHandler::sendMouseAbsEvent(int xDis, int yDis, int screen)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Display* display = X11Extras::getInstance()->display();
     XTestFakeMotionEvent(display, screen, xDis, yDis, 0);
     XFlush(display);
 }
 
-
 QString XTestEventHandler::getName()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return QString("XTest");
 }
 
-
 QString XTestEventHandler::getIdentifier()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return QString("xtest");
 }
 
-
 void XTestEventHandler::sendTextEntryEvent(QString maintext)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     AntKeyMapper *mapper = AntKeyMapper::getInstance();
 
-    if ((mapper != nullptr) && mapper->getKeyMapper())
-    {
-        Display* display = X11Extras::getInstance()->display();
-        QtX11KeyMapper *keymapper = qobject_cast<QtX11KeyMapper*>(mapper->getKeyMapper());
+    // Populated as needed.
+    unsigned int shiftcode = 0;
+    unsigned int controlcode = 0;
+    unsigned int metacode = 0;
+    unsigned int altcode = 0;
 
-        for (int i = 0; i < maintext.size(); i++)
+    if (mapper && mapper->getKeyMapper())
+    {
+        //Qt::KeyboardModifiers originalModifiers = Qt::KeyboardModifiers(QApplication::keyboardModifiers());
+        //Qt::KeyboardModifiers currentModifiers = Qt::KeyboardModifiers(QApplication::keyboardModifiers());
+        Display* display = X11Extras::getInstance()->display();
+        QtX11KeyMapper *keymapper = static_cast<QtX11KeyMapper*>(mapper->getKeyMapper());
+
+        for (int i=0; i < maintext.size(); i++)
         {
             QtX11KeyMapper::charKeyInformation temp = keymapper->getCharKeyInformation(maintext.at(i));
-            int tempcode = XKeysymToKeycode(display, static_cast<KeySym>(temp.virtualkey));
-
+            unsigned int tempcode = XKeysymToKeycode(display, temp.virtualkey);
             if (tempcode > 0)
             {
-                QList<int> tempList;
+                QList<unsigned int> tempList;
 
-                if ((temp.modifiers != Qt::NoModifier) && temp.modifiers.testFlag(Qt::ShiftModifier))
+                if (temp.modifiers != Qt::NoModifier)
                 {
-                  int shiftcode = XKeysymToKeycode(display, XK_Shift_L);
-                  int modifiercode = shiftcode;
-                  XTestFakeKeyEvent(display, modifiercode, 1, 0);
-                  tempList.append(modifiercode);
-                }
+                    if (temp.modifiers.testFlag(Qt::ShiftModifier))
+                    {
+                        if (shiftcode == 0)
+                        {
+                            shiftcode = XKeysymToKeycode(display, XK_Shift_L);
+                        }
 
-                if ((temp.modifiers != Qt::NoModifier) && temp.modifiers.testFlag(Qt::ControlModifier))
-                {
-                  int controlcode = XKeysymToKeycode(display, XK_Control_L);
-                  int modifiercode = controlcode;
-                  XTestFakeKeyEvent(display, modifiercode, 1, 0);
-                  tempList.append(modifiercode);
-                }
+                        unsigned int modifiercode = shiftcode;
+                        XTestFakeKeyEvent(display, modifiercode, 1, 0);
+                        //currentModifiers |= Qt::ShiftModifier;
+                        tempList.append(modifiercode);
+                    }
 
-                if ((temp.modifiers != Qt::NoModifier) && temp.modifiers.testFlag(Qt::AltModifier))
-                {
-                  int altcode = XKeysymToKeycode(display, XK_Alt_L);
-                  int modifiercode = altcode;
-                  XTestFakeKeyEvent(display, modifiercode, 1, 0);
-                  tempList.append(modifiercode);
-                }
+                    if (temp.modifiers.testFlag(Qt::ControlModifier))
+                    {
+                        if (controlcode == 0)
+                        {
+                            controlcode = XKeysymToKeycode(display, XK_Control_L);
+                        }
 
-                if ((temp.modifiers != Qt::NoModifier) && temp.modifiers.testFlag(Qt::MetaModifier))
-                {
-                  int metacode = XKeysymToKeycode(display, XK_Meta_L);
-                  int modifiercode = metacode;
-                  XTestFakeKeyEvent(display, modifiercode, 1, 0);
-                  tempList.append(modifiercode);
+                        unsigned int modifiercode = controlcode;
+                        XTestFakeKeyEvent(display, modifiercode, 1, 0);
+                        //currentModifiers |= Qt::ControlModifier;
+                        tempList.append(modifiercode);
+                    }
+
+                    if (temp.modifiers.testFlag(Qt::AltModifier))
+                    {
+                        if (altcode == 0)
+                        {
+                            altcode = XKeysymToKeycode(display, XK_Alt_L);
+                        }
+
+                        unsigned int modifiercode = altcode;
+                        XTestFakeKeyEvent(display, modifiercode, 1, 0);
+                        //currentModifiers |= Qt::AltModifier;
+                        tempList.append(modifiercode);
+                    }
+
+                    if (temp.modifiers.testFlag(Qt::MetaModifier))
+                    {
+                        if (metacode == 0)
+                        {
+                            metacode = XKeysymToKeycode(display, XK_Meta_L);
+                        }
+
+                        unsigned int modifiercode = metacode;
+                        XTestFakeKeyEvent(display, modifiercode, 1, 0);
+                        //currentModifiers |= Qt::MetaModifier;
+                        tempList.append(modifiercode);
+                    }
                 }
 
                 XTestFakeKeyEvent(display, tempcode, 1, 0);
@@ -203,12 +188,11 @@ void XTestEventHandler::sendTextEntryEvent(QString maintext)
 
                 if (tempList.size() > 0)
                 {
-                    QListIterator<int> tempiter(tempList);
+                    QListIterator<unsigned int> tempiter(tempList);
                     tempiter.toBack();
-
                     while (tempiter.hasPrevious())
                     {
-                        int currentcode = tempiter.previous();
+                        unsigned int currentcode = tempiter.previous();
                         XTestFakeKeyEvent(display, currentcode, 0, 0);
                     }
 
@@ -216,28 +200,15 @@ void XTestEventHandler::sendTextEntryEvent(QString maintext)
                 }
             }
         }
+
+        // Perform a flush at the end.
+        //XFlush(display);
+
+        // Restore modifiers in place
+        /*if (originalModifiers != currentModifiers)
+        {
+
+        }
+        */
     }
-}
-
-
-void XTestEventHandler::sendMouseSpringEvent(int xDis, int yDis, int width, int height) {
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    Q_UNUSED(xDis);
-    Q_UNUSED(yDis);
-    Q_UNUSED(width);
-    Q_UNUSED(height);
-}
-
-
-void XTestEventHandler::sendMouseSpringEvent(int, int)
-{
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-}
-
-
-void XTestEventHandler::printPostMessages()
-{
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }

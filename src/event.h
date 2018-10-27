@@ -20,12 +20,10 @@
 
 #include <QString>
 
-
 #include "joybuttonslot.h"
 //#include "mousehelper.h"
 #include "springmousemoveinfo.h"
 #include "common.h"
-
 
 void sendevent (JoyButtonSlot *slot, bool pressed=true);
 void sendevent(int code1, int code2);
@@ -37,13 +35,9 @@ void sendSpringEvent(PadderCommon::springModeInfo *fullSpring,
                      PadderCommon::springModeInfo *relativeSpring=0,
                      int* const mousePosX=0, int* const mousePos=0);
 
-void fakeAbsMouseCoordinates(double springX, double springY,
-                             int width, int height,
-                             int &finalx, int &finaly, int screen=-1);
-
 int X11KeySymToKeycode(QString key);
-QString keycodeToKeyString(int keycode, int alias=0); // .., .., unsigned
-int X11KeyCodeToX11KeySym(int keycode); // unsigned, unisigned
-QString keysymToKeyString(int keysym, int alias=0); // .., .., unsigned
+QString keycodeToKeyString(int keycode, unsigned int alias=0);
+unsigned int X11KeyCodeToX11KeySym(unsigned int keycode);
+QString keysymToKeyString(int keysym, unsigned int alias=0);
 
 #endif // EVENT_H

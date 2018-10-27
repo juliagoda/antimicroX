@@ -15,36 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "springmoderegionpreview.h"
-
-#include "messagehandler.h"
-
-#include <QDebug>
+//#include <QDebug>
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QPainter>
 #include <QPaintEvent>
 
+#include "springmoderegionpreview.h"
 
 SpringModeRegionPreview::SpringModeRegionPreview(int width, int height, QWidget *parent) :
     #if defined(Q_OS_WIN)
         QWidget(parent, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint)
-    #elif defined(Q_OS_UNIX)
+    #else
         QWidget(parent, Qt::FramelessWindowHint)
     #endif
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int tempwidth = adjustSpringSizeWidth(width);
     int tempheight = adjustSpringSizeHeight(height);
 
     setAttribute(Qt::WA_NoSystemBackground);
     setAttribute(Qt::WA_TranslucentBackground);
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+    setAttribute(Qt::WA_PaintOnScreen);
+#endif
+
     setAttribute(Qt::WA_ShowWithoutActivating);
 
-    setWindowTitle(trUtf8("Spring Mode Preview"));
+    setWindowTitle(tr("Spring Mode Preview"));
 
-    if ((tempwidth >= 2) && (tempheight >= 2))
+    if (tempwidth >= 2 && tempheight >= 2)
     {
         int cw = (qApp->desktop()->width() / 2) - (tempwidth / 2);
         int ch = (qApp->desktop()->height() / 2) - (tempheight / 2);
@@ -61,8 +60,6 @@ SpringModeRegionPreview::SpringModeRegionPreview(int width, int height, QWidget 
 
 void SpringModeRegionPreview::paintEvent(QPaintEvent *event)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(event);
 
     QPainter p(this);
@@ -77,8 +74,6 @@ void SpringModeRegionPreview::paintEvent(QPaintEvent *event)
 
 int SpringModeRegionPreview::adjustSpringSizeWidth(int width)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int tempwidth = size().width();
     if (width >= 2)
     {
@@ -94,8 +89,6 @@ int SpringModeRegionPreview::adjustSpringSizeWidth(int width)
 
 int SpringModeRegionPreview::adjustSpringSizeHeight(int height)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int tempheight = size().height();
 
     if (height >= 2)
@@ -112,8 +105,6 @@ int SpringModeRegionPreview::adjustSpringSizeHeight(int height)
 
 void SpringModeRegionPreview::setSpringWidth(int width)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int tempwidth = adjustSpringSizeWidth(width);
 
     int height = size().height();
@@ -122,7 +113,7 @@ void SpringModeRegionPreview::setSpringWidth(int width)
     hide();
 #endif
 
-    if ((tempwidth >= 2) && (height >= 2))
+    if (tempwidth >= 2 && height >= 2)
     {
         int cw = (qApp->desktop()->width() / 2) - (tempwidth / 2);
         int ch = (qApp->desktop()->height() / 2) - (height / 2);
@@ -145,8 +136,6 @@ void SpringModeRegionPreview::setSpringWidth(int width)
 
 void SpringModeRegionPreview::setSpringHeight(int height)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int tempheight = adjustSpringSizeHeight(height);
 
     int width = size().width();
@@ -155,7 +144,7 @@ void SpringModeRegionPreview::setSpringHeight(int height)
     hide();
 #endif
 
-    if ((width >= 2) && (tempheight >= 2))
+    if (width >= 2 && tempheight >= 2)
     {
         int cw = (qApp->desktop()->width() / 2) - (width / 2);
         int ch = (qApp->desktop()->height() / 2) - (tempheight / 2);
@@ -178,8 +167,6 @@ void SpringModeRegionPreview::setSpringHeight(int height)
 
 void SpringModeRegionPreview::setSpringSize(int width, int height)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     int tempwidth = adjustSpringSizeWidth(width);
     int tempheight = adjustSpringSizeHeight(height);
 

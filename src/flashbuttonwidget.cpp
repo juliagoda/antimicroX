@@ -15,42 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "flashbuttonwidget.h"
-
-#include "messagehandler.h"
-
-#include <QDebug>
+//#include <QDebug>
 #include <QStyle>
 #include <QFontMetrics>
 #include <QPainter>
-#include <QPaintEvent>
-#include <QWidget>
 
+#include "flashbuttonwidget.h"
 
 FlashButtonWidget::FlashButtonWidget(QWidget *parent) :
     QPushButton(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     isflashing = false;
-    m_displayNames = false;
+    displayNames = false;
     leftAlignText = false;
 }
 
 FlashButtonWidget::FlashButtonWidget(bool displayNames, QWidget *parent) :
     QPushButton(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     isflashing = false;
-    m_displayNames = displayNames;
+    this->displayNames = displayNames;
     leftAlignText = false;
 }
 
 void FlashButtonWidget::flash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     isflashing = true;
 
     this->style()->unpolish(this);
@@ -61,8 +50,6 @@ void FlashButtonWidget::flash()
 
 void FlashButtonWidget::unflash()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     isflashing = false;
 
     this->style()->unpolish(this);
@@ -73,48 +60,32 @@ void FlashButtonWidget::unflash()
 
 void FlashButtonWidget::refreshLabel()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     setText(generateLabel());
-
-    #ifndef QT_DEBUG_NO_OUTPUT
-        qDebug() << "label has been set: " << generateLabel();
-    #endif
 }
 
 bool FlashButtonWidget::isButtonFlashing()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return isflashing;
 }
 
 void FlashButtonWidget::toggleNameDisplay()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    m_displayNames = !m_displayNames;
+    displayNames = !displayNames;
     refreshLabel();
 }
 
 void FlashButtonWidget::setDisplayNames(bool display)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    m_displayNames = display;
+    displayNames = display;
 }
 
 bool FlashButtonWidget::isDisplayingNames()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    return m_displayNames;
+    return displayNames;
 }
 
 void FlashButtonWidget::paintEvent(QPaintEvent *event)
 {
-   // qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QPainter painter(this);
 
     QFont tempScaledFont = painter.font();
@@ -123,8 +94,7 @@ void FlashButtonWidget::paintEvent(QPaintEvent *event)
     QFontMetrics fm(tempScaledFont);
 
     bool reduce = false;
-
-    while ((this->width() < fm.width(text())) && (tempScaledFont.pointSize() >= 7))
+    while ((this->width() < fm.width(text())) && tempScaledFont.pointSize() >= 7)
     {
         tempScaledFont.setPointSize(tempScaledFont.pointSize()-1);
         painter.setFont(tempScaledFont);
@@ -133,7 +103,6 @@ void FlashButtonWidget::paintEvent(QPaintEvent *event)
     }
 
     bool changeFontSize = this->font().pointSize() != tempScaledFont.pointSize();
-
     if (changeFontSize)
     {
         if (reduce && !leftAlignText)
@@ -159,12 +128,5 @@ void FlashButtonWidget::paintEvent(QPaintEvent *event)
 
 void FlashButtonWidget::retranslateUi()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     refreshLabel();
-}
-
-bool FlashButtonWidget::ifDisplayNames() {
-
-    return m_displayNames;
 }

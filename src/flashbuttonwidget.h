@@ -19,10 +19,7 @@
 #define FLASHBUTTONWIDGET_H
 
 #include <QPushButton>
-
-class QWidget;
-class QPaintEvent;
-
+#include <QPaintEvent>
 
 class FlashButtonWidget : public QPushButton
 {
@@ -30,8 +27,8 @@ class FlashButtonWidget : public QPushButton
     Q_PROPERTY(bool isflashing READ isButtonFlashing)
 
 public:
-    explicit FlashButtonWidget(QWidget *parent = nullptr);
-    explicit FlashButtonWidget(bool displayNames, QWidget *parent = nullptr);
+    explicit FlashButtonWidget(QWidget *parent = 0);
+    explicit FlashButtonWidget(bool displayNames, QWidget *parent = 0);
 
     bool isButtonFlashing();
     void setDisplayNames(bool display);
@@ -41,7 +38,10 @@ protected:
     virtual void paintEvent(QPaintEvent *event);
     virtual QString generateLabel() = 0;
     virtual void retranslateUi();
-    bool ifDisplayNames();
+
+    bool isflashing;
+    bool displayNames;
+    bool leftAlignText;
 
 signals:
     void flashed(bool flashing);
@@ -55,12 +55,6 @@ public slots:
 protected slots:
     void flash();
     void unflash();
-
-private:
-    bool isflashing;
-    bool m_displayNames;
-    bool leftAlignText;
-
 };
 
 #endif // FLASHBUTTONWIDGET_H

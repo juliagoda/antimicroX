@@ -20,20 +20,22 @@
 
 #include <QObject>
 #include <QTimer>
-
-class QDesktopWidget;
+#include <QDesktopWidget>
 
 class MouseHelper : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit MouseHelper(QObject *parent = nullptr);
-    QDesktopWidget* getDesktopWidget() const;
+    explicit MouseHelper(QObject *parent = 0);
+    QDesktopWidget* getDesktopWidget();
+
     bool springMouseMoving;
     int previousCursorLocation[2];
     int pivotPoint[2];
     QTimer mouseTimer;
+    QDesktopWidget *deskWid;
+
+signals:
 
 public slots:
     void deleteDeskWid();
@@ -41,9 +43,6 @@ public slots:
     
 private slots:
     void resetSpringMouseMoving();
-
-private:
-    QDesktopWidget *deskWid;
 };
 
 #endif // MOUSEHELPER_H

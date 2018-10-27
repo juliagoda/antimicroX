@@ -42,7 +42,7 @@ WinVMultiEventHandler::WinVMultiEventHandler(QObject *parent) :
 
 WinVMultiEventHandler::~WinVMultiEventHandler()
 {
-    cleanupWinVmEvHand();
+    cleanup();
 }
 
 bool WinVMultiEventHandler::init()
@@ -51,7 +51,7 @@ bool WinVMultiEventHandler::init()
 
     vmulti = vmulti_alloc();
 
-    if (vmulti == nullptr)
+    if (vmulti == NULL)
     {
         result = false;
     }
@@ -77,11 +77,8 @@ bool WinVMultiEventHandler::init()
 
 bool WinVMultiEventHandler::cleanup()
 {
-    return cleanupWinVmEvHand();
-}
+    bool result = true;
 
-bool WinVMultiEventHandler::cleanupWinVmEvHand()
-{
     if (vmulti)
     {
         vmulti_disconnect(vmulti);
@@ -92,7 +89,7 @@ bool WinVMultiEventHandler::cleanupWinVmEvHand()
 
     nativeKeyMapper = 0;
 
-    return true;
+    return result;
 }
 
 void WinVMultiEventHandler::sendKeyboardEvent(JoyButtonSlot *slot, bool pressed)

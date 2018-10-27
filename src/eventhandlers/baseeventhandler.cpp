@@ -17,29 +17,13 @@
 
 #include "baseeventhandler.h"
 
-#include "joybuttonslot.h"
-#include "messagehandler.h"
-
-#include <QDebug>
-
-
 BaseEventHandler::BaseEventHandler(QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
-
-
-BaseEventHandler::~BaseEventHandler()
-{
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-}
-
 
 QString BaseEventHandler::getErrorString()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return lastErrorString;
 }
 
@@ -49,7 +33,6 @@ QString BaseEventHandler::getErrorString()
  */
 void BaseEventHandler::printPostMessages()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
 
 /**
@@ -60,8 +43,6 @@ void BaseEventHandler::printPostMessages()
  */
 void BaseEventHandler::sendMouseAbsEvent(int xDis, int yDis, int screen)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(xDis);
     Q_UNUSED(yDis);
     Q_UNUSED(screen);
@@ -74,11 +55,9 @@ void BaseEventHandler::sendMouseAbsEvent(int xDis, int yDis, int screen)
  * @param Bounding box width
  * @param Bounding box height
  */
-void BaseEventHandler::sendMouseSpringEvent(int xDis, int yDis,
-                                            int width, int height)
+void BaseEventHandler::sendMouseSpringEvent(unsigned int xDis, unsigned int yDis,
+                                            unsigned int width, unsigned int height)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_UNUSED(xDis);
     Q_UNUSED(yDis);
     Q_UNUSED(width);
@@ -92,15 +71,10 @@ void BaseEventHandler::sendMouseSpringEvent(int xDis, int yDis,
  */
 void BaseEventHandler::sendMouseSpringEvent(int xDis, int yDis)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    Q_UNUSED(xDis);
-    Q_UNUSED(yDis);
 }
 
 void BaseEventHandler::sendTextEntryEvent(QString maintext)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    Q_UNUSED(maintext);
 }

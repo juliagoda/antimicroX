@@ -18,28 +18,25 @@
 #ifndef JOYDPAD_H
 #define JOYDPAD_H
 
-
-#include "joybuttontypes/joydpadbutton.h"
-
 #include <QObject>
 #include <QHash>
 #include <QString>
 #include <QTimer>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
-class QXmlStreamReader;
-class QXmlStreamWriter;
+#include "joybuttontypes/joydpadbutton.h"
 
 class JoyDPad : public QObject
 {
     Q_OBJECT
-
 public:
     explicit JoyDPad(int index, int originset, SetJoystick *parentSet, QObject *parent=0);
     ~JoyDPad();
 
     enum JoyMode {StandardMode=0, EightWayMode, FourWayCardinal, FourWayDiagonal};
 
-    JoyDPadButton* getJoyButton(int index_local);
+    JoyDPadButton* getJoyButton(int index);
     QHash<int, JoyDPadButton*>* getJoyButtons();
 
     int getCurrentDirection();
@@ -79,8 +76,7 @@ public:
     void setButtonsWheelSpeedX(int value);
     void setButtonsWheelSpeedY(int value);
 
-    const QString getDpadName();
-    const QString getDefaultDpadName();
+    QString getDpadName();
 
     virtual bool isDefault();
 
@@ -100,7 +96,7 @@ public:
     bool isRelativeSpring();
     void copyAssignments(JoyDPad *destDPad);
 
-    int getDPadDelay(); // unsigned
+    unsigned int getDPadDelay();
     double getButtonsEasingDuration();
 
     void setButtonsSpringDeadCircleMultiplier(int value);
@@ -116,6 +112,32 @@ public:
 
     virtual void eventReset();
 
+    static const QString xmlName;
+    static const unsigned int DEFAULTDPADDELAY;
+
+protected:
+    void populateButtons();
+    void createDeskEvent(bool ignoresets = false);
+    QHash<int, JoyDPadButton*> getApplicableButtons();
+    bool readMainConfig(QXmlStreamReader *xml);
+
+    QHash<int, JoyDPadButton*> buttons;
+    int index;
+    JoyDPadButton::JoyDPadDirections prevDirection;
+    JoyDPadButton::JoyDPadDirections pendingDirection;
+    JoyDPadButton *activeDiagonalButton;
+    int originset;
+    JoyMode currentMode;
+    QString dpadName;
+    QString defaultDPadName;
+    SetJoystick *parentSet;
+    QTimer directionDelayTimer;
+    unsigned int dpadDelay;
+
+    bool pendingEvent;
+    int pendingEventDirection;
+    bool pendingIgnoreSets;
+
 signals:
     void active(int value);
     void released(int value);
@@ -129,40 +151,12 @@ public slots:
     void setButtonsSpringRelativeStatus(bool value);
     void setDPadDelay(int value);
     void setButtonsEasingDuration(double value);
+
     void establishPropertyUpdatedConnection();
     void disconnectPropertyUpdatedConnection();
 
 private slots:
     void dpadDirectionChangeEvent();
-
-protected:
-    void populateButtons();
-    void createDeskEvent(bool ignoresets = false);
-    QHash<int, JoyDPadButton*> getApplicableButtons();
-    bool readMainConfig(QXmlStreamReader *xml);
-
-private:
-    QHash<int, JoyDPadButton*> buttons;
-
-    JoyDPadButton::JoyDPadDirections prevDirection;
-    JoyDPadButton::JoyDPadDirections pendingDirection;
-    JoyDPadButton *activeDiagonalButton;
-
-    QString dpadName;
-    QString defaultDPadName;
-
-    SetJoystick *m_parentSet;
-    QTimer directionDelayTimer;
-    JoyMode currentMode;
-
-    int m_index;
-    int m_originset;
-    int dpadDelay; // unsigned
-    int pendingEventDirection;
-
-    bool pendingEvent;
-    bool pendingIgnoreSets;
-
 };
 
 #endif // JOYDPAD_H

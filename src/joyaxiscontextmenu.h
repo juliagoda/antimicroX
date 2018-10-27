@@ -18,21 +18,16 @@
 #ifndef JOYAXISCONTEXTMENU_H
 #define JOYAXISCONTEXTMENU_H
 
-
-
-#include "uihelpers/joyaxiscontextmenuhelper.h"
-
 #include <QMenu>
 
-class JoyAxis;
-class QWidget;
+#include "joyaxis.h"
+#include "uihelpers/joyaxiscontextmenuhelper.h"
 
 class JoyAxisContextMenu : public QMenu
 {
     Q_OBJECT
-
 public:
-    explicit JoyAxisContextMenu(JoyAxis *axis, QWidget *parent = nullptr);
+    explicit JoyAxisContextMenu(JoyAxis *axis, QWidget *parent = 0);
     void buildMenu();
     void buildAxisMenu();
     void buildTriggerMenu();
@@ -41,16 +36,17 @@ protected:
     int getPresetIndex();
     int getTriggerPresetIndex();
 
-private slots:
-    void setAxisPreset(QAction* action);
-    void setTriggerPreset(QAction* action);
-    void openMouseSettingsDialog();
-
-private:
-    JoyAxisContextMenuHelper& getHelperLocal();
-
     JoyAxis *axis;
     JoyAxisContextMenuHelper helper;
+
+signals:
+
+public slots:
+
+private slots:
+    void setAxisPreset();
+    void setTriggerPreset();
+    void openMouseSettingsDialog();
 };
 
 #endif // JOYAXISCONTEXTMENU_H

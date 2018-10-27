@@ -19,34 +19,38 @@
 #define JOYSTICK_H
 
 #include <QObject>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 #include "inputdevice.h"
-
-class AntiMicroSettings;
 
 class Joystick : public InputDevice
 {
     Q_OBJECT
-
 public:
     explicit Joystick(SDL_Joystick *joyhandle, int deviceIndex, AntiMicroSettings *settings, QObject *parent=0);
 
-    virtual QString getName() override;
-    virtual QString getSDLName() override;
-    virtual QString getGUIDString() override; // GUID available on SDL 2.
-    virtual QString getXmlName() override;
-    virtual void closeSDLDevice() override;
-    virtual SDL_JoystickID getSDLJoystickID() override;
+    virtual QString getName();
+    virtual QString getSDLName();
+    virtual QString getGUIDString(); // GUID available on SDL 2.
+    virtual QString getXmlName();
+    virtual void closeSDLDevice();
+#ifdef USE_SDL_2
+    virtual SDL_JoystickID getSDLJoystickID();
+#endif
 
-    virtual int getNumberRawButtons() override;
-    virtual int getNumberRawAxes() override;
-    virtual int getNumberRawHats() override;
+    virtual int getNumberRawButtons();
+    virtual int getNumberRawAxes();
+    virtual int getNumberRawHats();
 
-    SDL_Joystick* getJoyhandle() const;
+    static const QString xmlName;
 
-private:
-    SDL_Joystick *m_joyhandle;
-    SDL_JoystickID joystickID;
+protected:
+    SDL_Joystick *joyhandle;
+
+signals:
+
+public slots:
 
 };
 

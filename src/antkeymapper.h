@@ -26,7 +26,7 @@
   #ifdef WITH_VMULTI
     #include "qtvmultikeymapper.h"
   #endif
-#elif defined(Q_OS_UNIX)
+#else
 
   #if defined(WITH_XTEST)
     #include "qtx11keymapper.h"
@@ -40,24 +40,21 @@
 class AntKeyMapper : public QObject
 {
     Q_OBJECT
-
 public:
     static AntKeyMapper* getInstance(QString handler = "");
     void deleteInstance();
 
-    int returnVirtualKey(int qkey); // unsigned, unsigned
-    int returnQtKey(int key, int scancode=0); // unsigned, unsigned, unsigned
-    bool isModifierKey(int qkey); // .., unsigned
-    QtKeyMapperBase* getNativeKeyMapper() const;
-    QtKeyMapperBase* getKeyMapper() const;
+    unsigned int returnVirtualKey(unsigned int qkey);
+    unsigned int returnQtKey(unsigned int key, unsigned int scancode=0);
+    bool isModifierKey(unsigned int qkey);
+    QtKeyMapperBase* getNativeKeyMapper();
+    QtKeyMapperBase* getKeyMapper();
     bool hasNativeKeyMapper();
 
 protected:
+    explicit AntKeyMapper(QString handler = "", QObject *parent = 0);
+
     static AntKeyMapper *_instance;
-
-private:
-    explicit AntKeyMapper(QString handler = "", QObject *parent = nullptr);
-
     QtKeyMapperBase *internalMapper;
     QtKeyMapperBase *nativeKeyMapper;
 
@@ -68,7 +65,7 @@ private:
     QtVMultiKeyMapper vmultiMapper;
   #endif
 
-#elif defined(Q_OS_UNIX)
+#else
   #if defined(WITH_XTEST)
     QtX11KeyMapper x11Mapper;
   #endif
@@ -78,6 +75,10 @@ private:
   #endif
 
 #endif
+
+signals:
+
+public slots:
 
 };
 

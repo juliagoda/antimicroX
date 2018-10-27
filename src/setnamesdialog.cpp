@@ -15,16 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QTableWidgetItem>
+
 #include "setnamesdialog.h"
 #include "ui_setnamesdialog.h"
-
-#include "globalvariables.h"
-#include "messagehandler.h"
-#include "inputdevice.h"
-
-#include <QTableWidgetItem>
-#include <QWidget>
-#include <QDebug>
 
 
 SetNamesDialog::SetNamesDialog(InputDevice *device, QWidget *parent) :
@@ -32,43 +26,34 @@ SetNamesDialog::SetNamesDialog(InputDevice *device, QWidget *parent) :
     ui(new Ui::SetNamesDialog)
 {
     ui->setupUi(this);
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
     setAttribute(Qt::WA_DeleteOnClose);
+
     this->device = device;
 
-    for (int i = 0; i < GlobalVariables::InputDevice::NUMBER_JOYSETS; i++)
+    for (int i=0; i < InputDevice::NUMBER_JOYSETS; i++)
     {
         QString tempSetName = device->getSetJoystick(i)->getName();
         ui->setNamesTableWidget->setItem(i, 0, new QTableWidgetItem(tempSetName));
     }
 
-    connect(this, &SetNamesDialog::accepted, this, &SetNamesDialog::saveSetNameChanges);
+    connect(this, SIGNAL(accepted()), this, SLOT(saveSetNameChanges()));
 }
 
 SetNamesDialog::~SetNamesDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     delete ui;
 }
 
 void SetNamesDialog::saveSetNameChanges()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    for (int i = 0; i < ui->setNamesTableWidget->rowCount(); i++)
+    for (int i=0; i < ui->setNamesTableWidget->rowCount(); i++)
     {
         QTableWidgetItem *setNameItem = ui->setNamesTableWidget->item(i, 0);
         QString setNameText = setNameItem->text();
         QString oldSetNameText = device->getSetJoystick(i)->getName();
-
         if (setNameText != oldSetNameText)
+        {
             device->getSetJoystick(i)->setName(setNameText);
+        }
     }
-}
-
-InputDevice* SetNamesDialog::getDevice() const {
-
-    return device;
 }

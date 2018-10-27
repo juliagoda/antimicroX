@@ -17,17 +17,10 @@
 
 #include "mousecontrolsticksettingsdialoghelper.h"
 
-#include "messagehandler.h"
-#include "joycontrolstick.h"
-
-#include <QDebug>
-
 MouseControlStickSettingsDialogHelper::MouseControlStickSettingsDialogHelper(JoyControlStick *stick,
                                                                              QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     Q_ASSERT(stick);
 
     this->stick = stick;
@@ -35,54 +28,35 @@ MouseControlStickSettingsDialogHelper::MouseControlStickSettingsDialogHelper(Joy
 
 void MouseControlStickSettingsDialogHelper::updateExtraAccelerationStatus(bool checked)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsExtraAccelerationStatus(checked);
 }
 
 void MouseControlStickSettingsDialogHelper::updateExtraAccelerationMultiplier(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsExtraAccelerationMultiplier(value);
 }
 
 void MouseControlStickSettingsDialogHelper::updateStartMultiPercentage(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsStartAccelerationMultiplier(value);
 }
 
 void MouseControlStickSettingsDialogHelper::updateMinAccelThreshold(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsMinAccelerationThreshold(value);
 }
 
 void MouseControlStickSettingsDialogHelper::updateMaxAccelThreshold(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsMaxAccelerationThreshold(value);
 }
 
 void MouseControlStickSettingsDialogHelper::updateAccelExtraDuration(double value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsAccelerationExtraDuration(value);
 }
 
 void MouseControlStickSettingsDialogHelper::updateReleaseSpringRadius(int value)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     stick->setButtonsSpringDeadCircleMultiplier(value);
-}
-
-JoyControlStick* MouseControlStickSettingsDialogHelper::getStick() const {
-
-    return stick;
 }

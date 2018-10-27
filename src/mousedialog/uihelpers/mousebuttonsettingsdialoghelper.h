@@ -20,30 +20,31 @@
 
 #include <QObject>
 
-class JoyButton;
+#include "joybutton.h"
+#include "joybuttonslot.h"
 
 class MouseButtonSettingsDialogHelper : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit MouseButtonSettingsDialogHelper(JoyButton *button, QObject *parent = nullptr);
+    explicit MouseButtonSettingsDialogHelper(JoyButton *button, QObject *parent = 0);
 
-    JoyButton *getButton() const;
+protected:
+    JoyButton *button;
+
+signals:
 
 public slots:
     void updateExtraAccelerationStatus(bool checked);
     void updateExtraAccelerationMultiplier(double value);
+
     void updateStartMultiPercentage(double value);
     void updateMinAccelThreshold(double value);
     void updateMaxAccelThreshold(double value);
     void updateAccelExtraDuration(double value);
     void updateReleaseSpringRadius(int value);
     void updateSpringRelativeStatus(bool value);
-
-private:
-    JoyButton *button;
-
+    //void updateExtraAccelerationCurve(int index);
 };
 
 #endif // MOUSEBUTTONSETTINGSDIALOGHELPER_H

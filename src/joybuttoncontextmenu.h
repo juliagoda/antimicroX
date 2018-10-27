@@ -19,29 +19,26 @@
 #define JOYBUTTONCONTEXTMENU_H
 
 #include <QMenu>
-
-
-class JoyButton;
-class QWidget;
+#include "joybutton.h"
 
 class JoyButtonContextMenu : public QMenu
 {
     Q_OBJECT
-
 public:
-    explicit JoyButtonContextMenu(JoyButton *button, QWidget *parent = nullptr);
+    explicit JoyButtonContextMenu(JoyButton *button, QWidget *parent = 0);
     void buildMenu();
 
 protected:
     JoyButton *button;
 
+signals:
+
 private slots:
     void switchToggle();
     void switchTurbo();
-    void switchSetMode(QAction* action);
+    void switchSetMode();
     void disableSetMode();
     void clearButton();
-    void createActionForGroup(QActionGroup *tempGroup, QString actionText, QAction *action, QMenu *tempSetMenu, int setSelection, int currentSelection, int setDataInc, int setCondition);
 };
 
 #endif // JOYBUTTONCONTEXTMENU_H

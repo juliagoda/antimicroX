@@ -20,28 +20,29 @@
 
 #include <QTabWidget>
 
-
-class QWidget;
-class JoyTabWidget;
-class InputDevice;
+#include "joystick.h"
+#include "joytabwidget.h"
 
 class JoyTabWidgetContainer : public QTabWidget
 {
     Q_OBJECT
-
 public:
-    explicit JoyTabWidgetContainer(QWidget *parent = nullptr);
+    explicit JoyTabWidgetContainer(QWidget *parent = 0);
 
     int addTab(QWidget *widget, const QString &string);
     int addTab(JoyTabWidget *widget, const QString &string);
+
+protected:
+
+signals:
 
 public slots:
     void disableFlashes(InputDevice *joystick);
     void enableFlashes(InputDevice *joystick);
 
 private slots:
-    void flash(InputDevice* joystick);
-    void unflash(InputDevice *joystick);
+    void flash();
+    void unflash();
     void unflashAll();
     void unflashTab(JoyTabWidget *tabWidget);
 };

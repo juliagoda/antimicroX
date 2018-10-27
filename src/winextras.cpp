@@ -27,7 +27,7 @@ static MYPROC pQueryFullProcessImageNameW = (MYPROC) GetProcAddress(
 }
 */
 
-const int WinExtras::EXTENDED_FLAG = 0x100;
+const unsigned int WinExtras::EXTENDED_FLAG = 0x100;
 int WinExtras::originalMouseAccel = 0;
 
 static const QString ROOTASSOCIATIONKEY("HKEY_CURRENT_USER\\Software\\Classes");
@@ -42,7 +42,7 @@ WinExtras::WinExtras(QObject *parent) :
     populateKnownAliases();
 }
 
-QString WinExtras::getDisplayString(int virtualkey)
+QString WinExtras::getDisplayString(unsigned int virtualkey)
 {
     QString temp;
     if (virtualkey <= 0)
@@ -57,7 +57,7 @@ QString WinExtras::getDisplayString(int virtualkey)
     return temp;
 }
 
-int WinExtras::getVirtualKey(QString codestring)
+unsigned int WinExtras::getVirtualKey(QString codestring)
 {
     int temp = 0;
     if (_instance.knownAliasesX11SymVK.contains(codestring))
@@ -164,12 +164,12 @@ void WinExtras::populateKnownAliases()
 }
 
 /**
- * @brief Obtain a more specific virtual key (int) for a key grab event.
+ * @brief Obtain a more specific virtual key (unsigned int) for a key grab event.
  * @param Scan code obtained from a key grab event
  * @param Virtual key obtained from a key grab event
- * @return Corrected virtual key as an int
+ * @return Corrected virtual key as an unsigned int
  */
-int WinExtras::correctVirtualKey(int scancode, int virtualkey)
+unsigned int WinExtras::correctVirtualKey(unsigned int scancode, unsigned int virtualkey)
 {
     int mapvirtual = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
     int extended = (scancode & EXTENDED_FLAG) != 0;
@@ -201,9 +201,9 @@ int WinExtras::correctVirtualKey(int scancode, int virtualkey)
  * @brief Convert a virtual key into the corresponding keyboard scan code.
  * @param Windows virtual key
  * @param Qt key alias
- * @return Keyboard scan code as an int
+ * @return Keyboard scan code as an unsigned int
  */
-int WinExtras::scancodeFromVirtualKey(int virtualkey, int alias)
+unsigned int WinExtras::scancodeFromVirtualKey(unsigned int virtualkey, unsigned int alias)
 {
     int scancode = 0;
     if (virtualkey == VK_PAUSE)
@@ -254,7 +254,7 @@ QString WinExtras::getForegroundWindowExePath()
 {
     QString exePath;
     HWND foreground = GetForegroundWindow();
-    HANDLE windowProcess = nullptr;
+    HANDLE windowProcess = NULL;
     if (foreground)
     {
         DWORD processId;
@@ -262,7 +262,7 @@ QString WinExtras::getForegroundWindowExePath()
         windowProcess = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, true, processId);
     }
 
-    if (windowProcess != nullptr)
+    if (windowProcess != NULL)
     {
         TCHAR filename[MAX_PATH];
         memset(filename, 0, sizeof(filename));
@@ -277,7 +277,7 @@ QString WinExtras::getForegroundWindowExePath()
         else
         {
             // Windows XP
-            GetModuleFileNameEx(windowProcess, nullptr, filename, MAX_PATH * sizeof(TCHAR));
+            GetModuleFileNameEx(windowProcess, NULL, filename, MAX_PATH * sizeof(TCHAR));
             //qDebug() << pathLength;
         }
 
@@ -354,7 +354,7 @@ bool WinExtras::elevateAntiMicro()
     tempfile[antiProgramLocation.length()] = '\0';
     sei.lpVerb = tempverb;
     sei.lpFile = tempfile;
-    sei.hwnd = nullptr;
+    sei.hwnd = NULL;
     sei.nShow = SW_NORMAL;
     BOOL result = ShellExecuteEx(&sei);
     return result;
@@ -374,7 +374,7 @@ bool WinExtras::IsRunningAsAdmin()
                              &administratorsGroup);
     if (isAdmin)
     {
-        if (!CheckTokenMembership(nullptr, administratorsGroup, &isAdmin))
+        if (!CheckTokenMembership(NULL, administratorsGroup, &isAdmin))
         {
             isAdmin = FALSE;
         }
@@ -457,7 +457,7 @@ QString WinExtras::getCurrentWindowText()
 
     HWND foreground = GetForegroundWindow();
 
-    if (foreground != nullptr)
+    if (foreground != NULL)
     {
         TCHAR foundWindowTitle[256];
         memset(foundWindowTitle, 0, sizeof(foundWindowTitle));
@@ -481,7 +481,15 @@ QString WinExtras::getCurrentWindowText()
 
 bool WinExtras::raiseProcessPriority()
 {
-    return SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    bool result = false;
+    result = SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    /*if (!result)
+    {
+        qDebug() << "COULD NOT RAISE PROCESS PRIORITY";
+    }
+    */
+
+    return result;
 }
 
 QPoint WinExtras::getCursorPos()

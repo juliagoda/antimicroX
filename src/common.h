@@ -18,10 +18,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "config.h"
-#include "antimicrosettings.h"
-#include "mousehelper.h"
-
 #include <QtGlobal>
 #include <QString>
 #include <QDir>
@@ -34,7 +30,9 @@
 #include <QThread>
 #include <QCoreApplication>
 
-
+#include "config.h"
+#include "antimicrosettings.h"
+#include "mousehelper.h"
 
 #ifdef Q_OS_WIN
 
@@ -96,7 +94,7 @@ namespace PadderCommon
     return findWinLocalConfigPath();
 #elif defined(Q_OS_WIN)
     return findWinSystemConfigPath();
-#elif defined(Q_OS_UNIX)
+#else
     return  (!qgetenv("XDG_CONFIG_HOME").isEmpty()) ?
       QString::fromUtf8(qgetenv("XDG_CONFIG_HOME")) + "/antimicro" :
       QDir::homePath() + "/.config/antimicro";
@@ -109,7 +107,7 @@ namespace PadderCommon
     return QString(configPath()).append("/").append(configFileName);
 #elif defined(Q_OS_WIN)
     return QString(configPath()).append("/").append(configFileName);
-#elif defined(Q_OS_UNIX)
+#else
     return QString(configPath()).append("/").append(configFileName);
 #endif
   }
@@ -119,8 +117,7 @@ namespace PadderCommon
     // to be performed in order to be compatible with the latest version.
     const int LATESTCONFIGMIGRATIONVERSION = 5;
     const QString localSocketKey = "antimicroSignalListener";
-    const QString githubProjectPage = "https://github.com/juliagoda/antimicro";
-    const QString githubIssuesPage = "https://github.com/juliagoda/antimicro/issues";
+    const QString githubProjectPage = "https://github.com/AntiMicro/antimicro";
     const QString wikiPage = QString("%1/wiki").arg(githubProjectPage);
 
     const QString mouseDeviceName("antimicro Mouse Emulation");

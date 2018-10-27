@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gamecontroller configversion="19" appversion="2.24">
+    <!--The SDL name for a joystick is included for informational purposes only.-->
+    <sdlname>Logitech Dual Action</sdlname>
+    <!--The GUID for a joystick is included for informational purposes only.-->
+    <guid>030000006d04000016c2000011010000</guid>
+    <names>
+        <controlstickname index="1">L Stick</controlstickname>
+        <controlstickname index="2">R Stick</controlstickname>
+    </names>
+    <sets>
+        <set index="1">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+                <axisbutton index="1">
+                    <slots>
+                        <slot>
+                            <code>0x57</code>
+                            <mode>keyboard</mode>
+                        </slot>
+                    </slots>
+                </axisbutton>
+                <axisbutton index="2">
+                    <slots>
+                        <slot>
+                            <code>0x53</code>
+                            <mode>keyboard</mode>
+                        </slot>
+                    </slots>
+                </axisbutton>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <button index="1">
+                <slots>
+                    <slot>
+                        <code>0x47</code>
+                        <mode>keyboard</mode>
+                    </slot>
+                </slots>
+            </button>
+            <button index="3">
+                <slots>
+                    <slot>
+                        <code>0x50</code>
+                        <mode>keyboard</mode>
+                    </slot>
+                </slots>
+            </button>
+        </set>
+        <set index="2">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+        <set index="3">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+        <set index="4">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+        <set index="5">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+        <set index="6">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+        <set index="7">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+        <set index="8">
+            <stick index="1">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <stick index="2">
+                <calibrated>false</calibrated>
+                <summary></summary>
+                <diagonalRange>45</diagonalRange>
+            </stick>
+            <axis index="5">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+            <axis index="6">
+                <center_value>-1</center_value>
+                <min_value>-1</min_value>
+                <max_value>-1</max_value>
+                <throttle>normal</throttle>
+            </axis>
+        </set>
+    </sets>
+</gamecontroller>

@@ -20,49 +20,43 @@
 
 #include <QObject>
 #include <QMetaType>
-#include <QString>
 
 class AutoProfileInfo : public QObject
 {
-
     Q_OBJECT
-
 public:
     explicit AutoProfileInfo(QString guid, QString profileLocation,
-                             bool active, bool partialTitle, QObject *parent = nullptr);
+                             bool active, QObject *parent = 0);
     explicit AutoProfileInfo(QString guid, QString profileLocation,
-                             QString exe, bool active, bool partialTitle, QObject *parent = nullptr);
+                             QString exe, bool active, QObject *parent = 0);
     explicit AutoProfileInfo(QObject *parent=0);
     ~AutoProfileInfo();
 
     void setGUID(QString guid);
-    QString getGUID() const;
+    QString getGUID();
 
     void setProfileLocation(QString profileLocation);
-    QString getProfileLocation() const;
+    QString getProfileLocation();
 
     void setExe(QString exe);
-    QString getExe() const;
+    QString getExe();
 
     void setWindowClass(QString windowClass);
-    QString getWindowClass() const;
+    QString getWindowClass();
 
     void setWindowName(QString winName);
-    QString getWindowName() const;
+    QString getWindowName();
 
     void setActive(bool active);
     bool isActive();
 
     void setDeviceName(QString name);
-    QString getDeviceName() const;
+    QString getDeviceName();
 
     void setDefaultState(bool value);
     bool isCurrentDefault();
 
-    void setPartialState(bool value);
-    bool isPartialState();
-
-private:
+protected:
     QString guid;
     QString profileLocation;
     QString exe;
@@ -71,7 +65,10 @@ private:
     QString windowName;
     bool active;
     bool defaultState;
-    bool partialState;
+
+signals:
+
+public slots:
 
 };
 

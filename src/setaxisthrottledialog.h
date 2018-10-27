@@ -20,8 +20,7 @@
 
 #include <QDialog>
 
-class JoyAxis;
-class QWidget;
+#include "joyaxis.h"
 
 namespace Ui {
 class SetAxisThrottleDialog;
@@ -32,21 +31,20 @@ class SetAxisThrottleDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit SetAxisThrottleDialog(JoyAxis *axis, QWidget *parent = nullptr);
+    explicit SetAxisThrottleDialog(JoyAxis *axis, QWidget *parent = 0);
     ~SetAxisThrottleDialog();
     
-    JoyAxis* getAxis() const;
+private:
+    Ui::SetAxisThrottleDialog *ui;
+
+protected:
+    JoyAxis *axis;
 
 signals:
     void initiateSetAxisThrottleChange();
 
 private slots:
     void propogateThrottleChange();
-
-private:
-    Ui::SetAxisThrottleDialog *ui;
-
-    JoyAxis *axis;
 
 };
 

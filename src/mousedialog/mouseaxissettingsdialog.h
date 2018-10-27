@@ -18,32 +18,23 @@
 #ifndef MOUSEAXISSETTINGSDIALOG_H
 #define MOUSEAXISSETTINGSDIALOG_H
 
-#include "ui_mousesettingsdialog.h"
-
 #include "mousesettingsdialog.h"
+#include "springmoderegionpreview.h"
+
+#include <joyaxis.h>
 #include "uihelpers/mouseaxissettingsdialoghelper.h"
-
-#include <QWidget>
-
-
-class JoyAxis;
-class SpringModeRegionPreview;
 
 class MouseAxisSettingsDialog : public MouseSettingsDialog
 {
     Q_OBJECT
-
 public:
-    explicit MouseAxisSettingsDialog(JoyAxis *axis, QWidget *parent = nullptr);
-
-    JoyAxis* getAxis() const;
-    SpringModeRegionPreview* getSpringPreviewWidget() const;
-    MouseAxisSettingsDialogHelper const& getHelper();
+    explicit MouseAxisSettingsDialog(JoyAxis *axis, QWidget *parent = 0);
 
 protected:
     void selectCurrentMouseModePreset();
     void calculateSpringPreset();
     void calculateMouseSpeedPreset();
+    //void selectSmoothingPreset();
     void calculateWheelSpeedPreset();
     void updateWindowTitleAxisName();
 
@@ -55,6 +46,12 @@ protected:
     void calculateAccelExtraDuration();
     void calculateReleaseSpringRadius();
     void calculateExtraAccelerationCurve();
+
+    JoyAxis *axis;
+    SpringModeRegionPreview *springPreviewWidget;
+    MouseAxisSettingsDialogHelper helper;
+
+signals:
     
 public slots:
     void changeMouseMode(int index);
@@ -65,20 +62,14 @@ public slots:
     void updateSpringHeight(int value);
     void updateSensitivity(double value);
     void updateAccelerationCurvePresetComboBox();
+    //void updateSmoothingSetting(bool clicked);
+
     void updateWheelSpeedHorizontalSpeed(int value);
     void updateWheelSpeedVerticalSpeed(int value);
     void updateSpringRelativeStatus(bool value);
 
 private slots:
     void updateExtraAccelerationCurve(int index);
-
-private:
-    MouseAxisSettingsDialogHelper& getHelperLocal();
-
-    JoyAxis *axis;
-    SpringModeRegionPreview *springPreviewWidget;
-    MouseAxisSettingsDialogHelper helper;
-
 };
 
 #endif // MOUSEAXISSETTINGSDIALOG_H

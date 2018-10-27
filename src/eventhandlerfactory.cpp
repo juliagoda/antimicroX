@@ -15,26 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "eventhandlerfactory.h"
-
-#include "messagehandler.h"
-#include "eventhandlers/baseeventhandler.h"
-
 #include <QHash>
-#include <QDebug>
 
+#include "eventhandlerfactory.h"
 
 static QHash<QString, QString> buildDisplayNames()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QHash<QString, QString> temp;
 #ifdef Q_OS_WIN
     temp.insert("sendinput", "SendInput");
   #ifdef WITH_VMULTI
     temp.insert("vmulti", "Vmulti");
   #endif
-#elif defined(Q_OS_UNIX)
+#else
     temp.insert("xtest", "Xtest");
     temp.insert("uinput", "uinput");
 #endif
@@ -43,28 +36,24 @@ static QHash<QString, QString> buildDisplayNames()
 
 QHash<QString, QString> handlerDisplayNames = buildDisplayNames();
 
-EventHandlerFactory* EventHandlerFactory::instance = nullptr;
-
-
+EventHandlerFactory* EventHandlerFactory::instance = 0;
 
 EventHandlerFactory::EventHandlerFactory(QString handler, QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
 #ifdef Q_OS_UNIX
     #ifdef WITH_UINPUT
-
     if (handler == "uinput")
+    {
         eventHandler = new UInputEventHandler(this);
-
-#endif
+    }
+    #endif
 
     #ifdef WITH_XTEST
-
     if (handler == "xtest")
+    {
         eventHandler = new XTestEventHandler(this);
-
+    }
     #endif
 #elif defined(Q_OS_WIN)
     if (handler == "sendinput")
@@ -82,25 +71,26 @@ EventHandlerFactory::EventHandlerFactory(QString handler, QObject *parent) :
 
 EventHandlerFactory::~EventHandlerFactory()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (eventHandler != nullptr)
+    if (eventHandler)
     {
         delete eventHandler;
-        eventHandler = nullptr;
+        eventHandler = 0;
     }
 }
 
 EventHandlerFactory* EventHandlerFactory::getInstance(QString handler)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (instance == nullptr)
+    if (!instance)
     {
         QStringList temp = buildEventGeneratorList();
-
-        if (!handler.isEmpty() && temp.contains(handler)) instance = new EventHandlerFactory(handler);
-        else instance = new EventHandlerFactory(fallBackIdentifier());
+        if (!handler.isEmpty() && temp.contains(handler))
+        {
+            instance = new EventHandlerFactory(handler);
+        }
+        else
+        {
+            instance = new EventHandlerFactory(fallBackIdentifier());
+        }
     }
 
     return instance;
@@ -108,27 +98,21 @@ EventHandlerFactory* EventHandlerFactory::getInstance(QString handler)
 
 void EventHandlerFactory::deleteInstance()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    if (instance != nullptr)
+    if (instance)
     {
         delete instance;
-        instance = nullptr;
+        instance = 0;
     }
 }
 
 BaseEventHandler* EventHandlerFactory::handler()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return eventHandler;
 }
 
 QString EventHandlerFactory::fallBackIdentifier()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString temp = QString();
+    QString temp;
 #ifdef Q_OS_UNIX
   #if defined(WITH_XTEST)
     temp = "xtest";
@@ -146,16 +130,14 @@ QString EventHandlerFactory::fallBackIdentifier()
 
 QStringList EventHandlerFactory::buildEventGeneratorList()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QStringList temp = QStringList();
+    QStringList temp;
 
 #ifdef Q_OS_WIN
     temp.append("sendinput");
   #ifdef WITH_VMULTI
     temp.append("vmulti");
   #endif
-#elif defined(Q_OS_UNIX)
+#else
     temp.append("xtest");
     temp.append("uinput");
 #endif
@@ -164,12 +146,11 @@ QStringList EventHandlerFactory::buildEventGeneratorList()
 
 QString EventHandlerFactory::handlerDisplayName(QString handler)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString handlerDispName = QString();
-
+    QString temp;
     if (handlerDisplayNames.contains(handler))
-        handlerDispName = handlerDisplayNames.value(handler);
+    {
+        temp = handlerDisplayNames.value(handler);
+    }
 
-    return handlerDispName;
+    return temp;
 }

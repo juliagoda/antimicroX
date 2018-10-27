@@ -18,14 +18,10 @@
 #ifndef JOYAXISWIDGET_H
 #define JOYAXISWIDGET_H
 
-
-
-#include "flashbuttonwidget.h"
-
 #include <QPoint>
 
-class JoyAxis;
-class QWidget;
+#include "flashbuttonwidget.h"
+#include "joyaxis.h"
 
 class JoyAxisWidget : public FlashButtonWidget
 {
@@ -34,21 +30,22 @@ class JoyAxisWidget : public FlashButtonWidget
 public:
     explicit JoyAxisWidget(JoyAxis *axis, bool displayNames, QWidget *parent=0);
 
-    JoyAxis* getAxis() const;
+    JoyAxis* getAxis();
     void tryFlash();
 
 protected:
-    virtual QString generateLabel() override;
+    virtual QString generateLabel();
+
+    JoyAxis *axis;
+
+signals:
 
 public slots:
-    void disableFlashes() override;
-    void enableFlashes() override;
+    void disableFlashes();
+    void enableFlashes();
 
 private slots:
     void showContextMenu(const QPoint &point);
-
-private:
-    JoyAxis *m_axis;
 };
 
 #endif // JOYAXISWIDGET_H

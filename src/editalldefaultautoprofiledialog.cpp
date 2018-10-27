@@ -15,20 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "editalldefaultautoprofiledialog.h"
-#include "ui_editalldefaultautoprofiledialog.h"
-
-#include "messagehandler.h"
-#include "autoprofileinfo.h"
-#include "antimicrosettings.h"
-#include "common.h"
-
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QWidget>
-#include <QDebug>
 
+#include "editalldefaultautoprofiledialog.h"
+#include "ui_editalldefaultautoprofiledialog.h"
+#include "common.h"
 
 EditAllDefaultAutoProfileDialog::EditAllDefaultAutoProfileDialog(AutoProfileInfo *info, AntiMicroSettings *settings,
                                                                  QWidget *parent) :
@@ -36,69 +29,59 @@ EditAllDefaultAutoProfileDialog::EditAllDefaultAutoProfileDialog(AutoProfileInfo
     ui(new Ui::EditAllDefaultAutoProfileDialog)
 {
     ui->setupUi(this);
-
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     setAttribute(Qt::WA_DeleteOnClose);
 
     this->info = info;
     this->settings = settings;
 
     if (!info->getProfileLocation().isEmpty())
+    {
         ui->profileLineEdit->setText(info->getProfileLocation());
+    }
 
-    connect(ui->profileBrowsePushButton, &QPushButton::clicked, this, &EditAllDefaultAutoProfileDialog::openProfileBrowseDialog);
-    connect(this, &EditAllDefaultAutoProfileDialog::accepted, this, &EditAllDefaultAutoProfileDialog::saveAutoProfileInformation);
+    connect(ui->profileBrowsePushButton, SIGNAL(clicked()), this, SLOT(openProfileBrowseDialog()));
+    connect(this, SIGNAL(accepted()), this, SLOT(saveAutoProfileInformation()));
 }
 
 EditAllDefaultAutoProfileDialog::~EditAllDefaultAutoProfileDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     delete ui;
 }
 
 void EditAllDefaultAutoProfileDialog::openProfileBrowseDialog()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString preferredProfileDir = PadderCommon::preferredProfileDir(settings);
-    QString profileFilename = QFileDialog::getOpenFileName(this, trUtf8("Open Config"), preferredProfileDir, QString("Config Files (*.amgp *.xml)"));
-
-    if (!profileFilename.isNull() && !profileFilename.isEmpty()) ui->profileLineEdit->setText(profileFilename);
+    QString lookupDir = PadderCommon::preferredProfileDir(settings);
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open Config"), lookupDir, QString("Config Files (*.amgp *.xml)"));
+    if (!filename.isNull() && !filename.isEmpty())
+    {
+        ui->profileLineEdit->setText(filename);
+    }
 }
 
 void EditAllDefaultAutoProfileDialog::saveAutoProfileInformation()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     info->setGUID("all");
     info->setProfileLocation(ui->profileLineEdit->text());
     info->setActive(true);
 }
 
-AutoProfileInfo* EditAllDefaultAutoProfileDialog::getAutoProfile() const
+AutoProfileInfo* EditAllDefaultAutoProfileDialog::getAutoProfile()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     return info;
 }
 
 void EditAllDefaultAutoProfileDialog::accept()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool validForm = true;
-    QString errorString = QString();
-
+    QString errorString;
     if (ui->profileLineEdit->text().length() > 0)
     {
-        QFileInfo profileInfo(ui->profileLineEdit->text());
-
-        if (!profileInfo.exists())
+        QString profileFilename = ui->profileLineEdit->text();
+        QFileInfo info(profileFilename);
+        if (!info.exists())
         {
             validForm = false;
-            errorString = trUtf8("Profile file path is invalid.");
+            errorString = tr("Profile file path is invalid.");
         }
     }
 
@@ -113,9 +96,4 @@ void EditAllDefaultAutoProfileDialog::accept()
         msgBox.setStandardButtons(QMessageBox::Close);
         msgBox.exec();
     }
-}
-
-AntiMicroSettings* EditAllDefaultAutoProfileDialog::getSettings() const {
-
-    return settings;
 }

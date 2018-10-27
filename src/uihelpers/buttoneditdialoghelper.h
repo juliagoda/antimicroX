@@ -18,33 +18,25 @@
 #ifndef BUTTONEDITDIALOGHELPER_H
 #define BUTTONEDITDIALOGHELPER_H
 
-#include "joybuttonslot.h"
-
 #include <QObject>
 
-
-
-class JoyButton;
+#include "joybutton.h"
+#include "joybuttonslot.h"
 
 class ButtonEditDialogHelper : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit ButtonEditDialogHelper(JoyButton *button, QObject *parent = nullptr);
-    explicit ButtonEditDialogHelper(QObject *parent = nullptr);
-    void setThisButton(JoyButton *btn);
+    explicit ButtonEditDialogHelper(JoyButton *button, QObject *parent = 0);
 
 protected:
     JoyButton *button;
 
+signals:
+
 public slots:
-    void setAssignedSlot(int code,
-                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard); // (.., unsigned)
-    void setAssignedSlot(int code, int alias,
-                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard); // (.., unsigned)
-    void setAssignedSlot(int code, int alias, int index,
-                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard); // (.., unsigned)
+    void setAssignedSlot(int code, unsigned int alias,
+                         JoyButtonSlot::JoySlotInputAction mode=JoyButtonSlot::JoyKeyboard);
     void setUseTurbo(bool useTurbo);
 };
 

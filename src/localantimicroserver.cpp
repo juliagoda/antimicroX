@@ -15,28 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "localantimicroserver.h"
-
-#include "messagehandler.h"
-#include "common.h"
-
 #include <QTextStream>
 #include <QLocalSocket>
-#include <QLocalServer>
-#include <QDebug>
+
+#include "localantimicroserver.h"
+#include "common.h"
 
 LocalAntiMicroServer::LocalAntiMicroServer(QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     localServer = new QLocalServer(this);
 }
 
 void LocalAntiMicroServer::startLocalServer()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QLocalServer::removeServer(PadderCommon::localSocketKey);
     localServer->setMaxPendingConnections(1);
     if (!localServer->listen(PadderCommon::localSocketKey))
@@ -44,41 +36,30 @@ void LocalAntiMicroServer::startLocalServer()
         QTextStream errorstream(stderr);
         QString message("Could not start signal server. Profiles cannot be reloaded\n");
         message.append("from command-line");
-        errorstream << trUtf8(message.toStdString().c_str()) << endl;
+        errorstream << tr(message.toStdString().c_str()) << endl;
     }
     else
     {
-        connect(localServer, &QLocalServer::newConnection, this, &LocalAntiMicroServer::handleOutsideConnection);
+        connect(localServer, SIGNAL(newConnection()), this, SLOT(handleOutsideConnection()));
     }
 }
 
 void LocalAntiMicroServer::handleOutsideConnection()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     QLocalSocket *socket = localServer->nextPendingConnection();
-    if (socket != nullptr)
+    if (socket)
     {
-        connect(socket, &QLocalSocket::disconnected, this, &LocalAntiMicroServer::handleSocketDisconnect);
-        connect(socket, &QLocalSocket::disconnected, socket, &QLocalSocket::deleteLater);
+        connect(socket, SIGNAL(disconnected()), this, SLOT(handleSocketDisconnect()));
+        connect(socket, SIGNAL(disconnected()), socket, SLOT(deleteLater()));
     }
 }
 
 void LocalAntiMicroServer::handleSocketDisconnect()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     emit clientdisconnect();
 }
 
 void LocalAntiMicroServer::close()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     localServer->close();
-}
-
-QLocalServer* LocalAntiMicroServer::getLocalServer() const {
-
-    return localServer;
 }

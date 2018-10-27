@@ -284,7 +284,8 @@
                </property>
                <property name="icon">
                 <iconset theme="archive-insert">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
               </widget>
              </item>
@@ -298,7 +299,8 @@
                </property>
                <property name="icon">
                 <iconset theme="edit-delete">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
               </widget>
              </item>
@@ -312,7 +314,8 @@
                </property>
                <property name="icon">
                 <iconset theme="edit-clear">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
               </widget>
              </item>
@@ -349,7 +352,7 @@
          <item>
           <widget class="QStackedWidget" name="slotControlsStackedWidget">
            <property name="currentIndex">
-            <number>8</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="timePage">
             <layout class="QVBoxLayout" name="verticalLayout_12">
@@ -746,6 +749,13 @@
           </spacer>
          </item>
         </layout>
+        <zorder>verticalSpacer_5</zorder>
+        <zorder>slotListWidget</zorder>
+        <zorder></zorder>
+        <zorder>verticalSpacer_6</zorder>
+        <zorder>slotControlsStackedWidget</zorder>
+        <zorder>slotTypeHelpLabel</zorder>
+        <zorder>verticalSpacer_2</zorder>
        </widget>
        <widget class="QWidget" name="page_2">
         <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -1011,6 +1021,11 @@
           </layout>
          </item>
         </layout>
+        <zorder>turboSlider</zorder>
+        <zorder></zorder>
+        <zorder>verticalSpacer</zorder>
+        <zorder></zorder>
+        <zorder>verticalSpacer_4</zorder>
        </widget>
        <widget class="QWidget" name="page_4">
         <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1200,6 +1215,9 @@
     </widget>
    </item>
   </layout>
+  <zorder>buttonBox</zorder>
+  <zorder>line</zorder>
+  <zorder></zorder>
  </widget>
  <customwidgets>
   <customwidget>

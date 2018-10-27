@@ -20,16 +20,17 @@
 
 #include <QObject>
 
-class InputDevice;
-class XMLConfigReader;
-class XMLConfigWriter;
+#include "inputdevice.h"
+#include "joybutton.h"
+#include "joybuttonslot.h"
+#include "xmlconfigreader.h"
+#include "xmlconfigwriter.h"
 
 class JoyTabWidgetHelper : public QObject
 {
     Q_OBJECT
-
 public:
-    explicit JoyTabWidgetHelper(InputDevice *device, QObject *parent = nullptr);
+    explicit JoyTabWidgetHelper(InputDevice *device, QObject *parent = 0);
     ~JoyTabWidgetHelper();
 
     bool hasReader();
@@ -47,6 +48,8 @@ protected:
     XMLConfigWriter *writer;
     bool errorOccurred;
     QString lastErrorString;
+
+signals:
 
 public slots:
     bool readConfigFile(QString filepath);

@@ -15,29 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "xmlconfigmigration.h"
-
-#include "messagehandler.h"
 #include "event.h"
 #include "antkeymapper.h"
-#include "common.h"
 
 #ifdef Q_OS_UNIX
 #include "eventhandlerfactory.h"
 #endif
 
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-#include <QDebug>
+
+#include "xmlconfigmigration.h"
 
 
 XMLConfigMigration::XMLConfigMigration(QXmlStreamReader *reader, QObject *parent) :
     QObject(parent)
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     this->reader = reader;
-
     if (reader->device() && reader->device()->isOpen())
     {
         this->fileVersion = reader->attributes().value("configversion").toString().toInt();
@@ -50,11 +42,12 @@ XMLConfigMigration::XMLConfigMigration(QXmlStreamReader *reader, QObject *parent
 
 bool XMLConfigMigration::requiresMigration()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
     bool toMigrate = false;
-
-    if ((fileVersion >= 2) && (fileVersion <= PadderCommon::LATESTCONFIGMIGRATIONVERSION))
+    if (fileVersion == 0)
+    {
+        toMigrate = false;
+    }
+    else if (fileVersion >= 2 && fileVersion <= PadderCommon::LATESTCONFIGMIGRATIONVERSION)
     {
         toMigrate = true;
     }
@@ -64,20 +57,18 @@ bool XMLConfigMigration::requiresMigration()
 
 QString XMLConfigMigration::migrate()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString tempXmlString = QString();
-
+    QString tempXmlString;
     if (requiresMigration())
     {
+        int tempFileVersion = fileVersion;
         QString initialData = readConfigToString();
         reader->clear();
         reader->addData(initialData);
 
-        if ((fileVersion >= 2) && (fileVersion <= 5))
+        if (tempFileVersion >= 2 && tempFileVersion <= 5)
         {
             tempXmlString = version0006Migration();
-            fileVersion = PadderCommon::LATESTCONFIGFILEVERSION;
+            tempFileVersion = PadderCommon::LATESTCONFIGFILEVERSION;
         }
     }
 
@@ -86,12 +77,9 @@ QString XMLConfigMigration::migrate()
 
 QString XMLConfigMigration::readConfigToString()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString tempXmlString = QString();
+    QString tempXmlString;
     QXmlStreamWriter writer(&tempXmlString);
     writer.setAutoFormatting(true);
-
     while (!reader->atEnd())
     {
         writer.writeCurrentToken(*reader);
@@ -103,9 +91,7 @@ QString XMLConfigMigration::readConfigToString()
 
 QString XMLConfigMigration::version0006Migration()
 {
-    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-    QString tempXmlString = QString();
+    QString tempXmlString;
     QXmlStreamWriter writer(&tempXmlString);
     writer.setAutoFormatting(true);
     reader->readNextStartElement();
@@ -118,22 +104,22 @@ QString XMLConfigMigration::version0006Migration()
 
     while (!reader->atEnd())
     {
-        if ((reader->name() == "slot") && reader->isStartElement())
+        if (reader->name() == "slot" && reader->isStartElement())
         {
-            int slotcode = 0;
-            QString slotmode = QString();
+            unsigned int slotcode = 0;
+            QString slotmode;
             writer.writeCurrentToken(*reader);
             reader->readNext();
 
             // Grab current slot code and slot mode
-            while (!reader->atEnd() && (!reader->isEndElement() && (reader->name() != "slot")))
+            while (!reader->atEnd() && (!reader->isEndElement() && reader->name() != "slot"))
             {
-                if ((reader->name() == "code") && reader->isStartElement())
+                if (reader->name() == "code" && reader->isStartElement())
                 {
                     QString tempcode = reader->readElementText();
                     slotcode = tempcode.toInt();
                 }
-                else if ((reader->name() == "mode") && reader->isStartElement())
+                else if (reader->name() == "mode" && reader->isStartElement())
                 {
                     slotmode = reader->readElementText();
                 }
@@ -150,12 +136,11 @@ QString XMLConfigMigration::version0006Migration()
             {
                 if (slotmode == "keyboard")
                 {
-                    int tempcode = slotcode;
+                    unsigned int tempcode = slotcode;
 #ifdef Q_OS_WIN
                     slotcode = AntKeyMapper::getInstance()->returnQtKey(slotcode);
-#elif defined(Q_OS_UNIX)
+#else
                     BaseEventHandler *handler = EventHandlerFactory::getInstance()->handler();
-
                     if (handler->getIdentifier() == "xtest")
                     {
                         slotcode = AntKeyMapper::getInstance()->returnQtKey(X11KeyCodeToX11KeySym(slotcode));
@@ -183,26 +168,14 @@ QString XMLConfigMigration::version0006Migration()
 
                 writer.writeTextElement("mode", slotmode);
             }
-
             writer.writeCurrentToken(*reader);
         }
         else
         {
             writer.writeCurrentToken(*reader);
         }
-
         reader->readNext();
     }
 
     return tempXmlString;
-}
-
-const QXmlStreamReader* XMLConfigMigration::getReader() {
-
-    return reader;
-}
-
-int XMLConfigMigration::getFileVersion() const {
-
-    return fileVersion;
 }

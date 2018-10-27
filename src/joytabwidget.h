@@ -18,56 +18,46 @@
 #ifndef JOYTABWIDGET_H
 #define JOYTABWIDGET_H
 
-
-#include "uihelpers/joytabwidgethelper.h"
-
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QPushButton>
+#include <QComboBox>
+#include <QSpacerItem>
 #include <QFileDialog>
 #include <QHash>
+#include <QStackedWidget>
 #include <QScrollArea>
 #include <QIcon>
 
+#include "uihelpers/joytabwidgethelper.h"
 
-class InputDevice;
-class AntiMicroSettings;
-class QEvent;
-class SetJoystick;
-class QVBoxLayout;
-class QHBoxLayout;
-class QGridLayout;
-class QPushButton;
-class QComboBox;
-class QSpacerItem;
-class AxisEditDialog;
-class QAction;
-class QMenu;
-class QStackedWidget;
+#include "joystick.h"
+#include "axiseditdialog.h"
+#include "inputdevice.h"
+#include "antimicrosettings.h"
+
 
 class JoyTabWidget : public QWidget
 {
     Q_OBJECT
-
 public:
-    explicit JoyTabWidget(InputDevice *joystick, AntiMicroSettings *settings, QWidget *parent = nullptr);
+    explicit JoyTabWidget(InputDevice *joystick, AntiMicroSettings *settings, QWidget *parent = 0);
 
     void saveSettings();
     void loadSettings(bool forceRefresh=false);
-    void setCurrentConfig(int index);
-    void unloadConfig();
-    void checkHideEmptyOption();
-    void refreshHelperThread();
-
-    bool isDisplayingNames();
-    bool discardUnsavedProfileChanges();
-
-    int getCurrentConfigIndex();
-
     QHash<int, QString>* recentConfigs();
-
+    void setCurrentConfig(int index);
+    int getCurrentConfigIndex();
     QString getCurrentConfigName();
     QString getConfigName(int index);
-
     InputDevice *getJoystick();
-
+    void unloadConfig();
+    bool isDisplayingNames();
+    bool discardUnsavedProfileChanges();
+    void checkHideEmptyOption();
+    void refreshHelperThread();
 
 #ifdef Q_OS_WIN
     void deviceKeyRepeatSettings();
@@ -81,72 +71,10 @@ protected:
     void reconnectMainComboBoxEvents();
     void disconnectCheckUnsavedEvent();
     void reconnectCheckUnsavedEvent();
+
     void fillSetButtons(SetJoystick *set);
     void removeSetButtons(SetJoystick *set);
 
-    static const int DEFAULTNUMBERPROFILES = 5;
-
-signals:
-    void joystickConfigChanged(int index);
-    void joystickAxisRefreshLabels(int axisIndex);
-    void namesDisplayChanged(bool status);
-    void forceTabUnflash(JoyTabWidget *tabWidget);
-    void mappingUpdated(QString mapping, InputDevice *device);
-
-public slots:
-    void openConfigFileDialog();
-    void fillButtons();
-    void saveDeviceSettings(bool sync=false);
-    void loadDeviceSettings();
-    void changeNameDisplay(bool displayNames);
-    void changeCurrentSet(int index);
-    void loadConfigFile(QString fileLocation);
-    void refreshButtons();
-
-private slots:
-    void saveConfigFile();
-    void resetJoystick();
-    void saveAsConfig();
-    void removeConfig();
-    void changeJoyConfig(int index);
-    void showAxisDialog();
-    void showButtonDialog();
-    void showStickAssignmentDialog();
-    void showQuickSetDialog();
-    void showKeyDelayDialog();
-    void showSetNamesDialog();
-    void toggleNames();
-
-    void changeSetOne();
-    void changeSetTwo();
-    void changeSetThree();
-    void changeSetFour();
-    void changeSetFive();
-    void changeSetSix();
-    void changeSetSeven();
-    void changeSetEight();
-    void displayProfileEditNotification();
-    void removeProfileEditNotification();
-    void checkForUnsavedProfile(int newindex=-1);
-
-    void checkStickDisplay();
-    void checkDPadButtonDisplay();
-    void checkAxisButtonDisplay();
-    void checkButtonDisplay();
-
-    void checkStickEmptyDisplay();
-    void checkDPadButtonEmptyDisplay();
-    void checkAxisButtonEmptyDisplay();
-    void checkButtonEmptyDisplay();
-    void editCurrentProfileItemText(QString text);
-    void refreshCopySetActions();
-    void performSetCopy();
-    void disableCopyCurrentSet();
-    void refreshSetButtons();
-    void openGameControllerMappingWindow();
-    void propogateMappingUpdate(QString mapping, InputDevice *device);
-
-private:
     QVBoxLayout *verticalLayout;
     QHBoxLayout *configHorizontalLayout;
     QPushButton *removeButton;
@@ -209,15 +137,81 @@ private:
     QPushButton *pushButton;
     QSpacerItem *verticalSpacer_3;
 
-    InputDevice *m_joystick;
+    InputDevice *joystick;
     bool displayingNames;
-    AntiMicroSettings *m_settings;
+    AntiMicroSettings *settings;
     int comboBoxIndex;
     bool hideEmptyButtons;
     QString oldProfileName;
 
     JoyTabWidgetHelper tabHelper;
 
+    static const int DEFAULTNUMBERPROFILES = 5;
+
+signals:
+    void joystickConfigChanged(int index);
+    void joystickAxisRefreshLabels(int axisIndex);
+    void namesDisplayChanged(bool status);
+    void forceTabUnflash(JoyTabWidget *tabWidget);
+#ifdef USE_SDL_2
+    void mappingUpdated(QString mapping, InputDevice *device);
+#endif
+
+public slots:
+    void openConfigFileDialog();
+    void fillButtons();
+    void saveDeviceSettings(bool sync=false);
+    void loadDeviceSettings();
+    void changeNameDisplay(bool displayNames);
+    void changeCurrentSet(int index);
+    void loadConfigFile(QString fileLocation);
+    void refreshButtons();
+
+private slots:
+    void saveConfigFile();
+    void resetJoystick();
+    void saveAsConfig();
+    void removeConfig();
+    void changeJoyConfig(int index);
+    void showAxisDialog();
+    void showButtonDialog();
+    void showStickAssignmentDialog();
+    void showQuickSetDialog();
+    void showKeyDelayDialog();
+    void showSetNamesDialog();
+    void toggleNames();
+
+    void changeSetOne();
+    void changeSetTwo();
+    void changeSetThree();
+    void changeSetFour();
+    void changeSetFive();
+    void changeSetSix();
+    void changeSetSeven();
+    void changeSetEight();
+    void displayProfileEditNotification();
+    void removeProfileEditNotification();
+    void checkForUnsavedProfile(int newindex=-1);
+
+    void checkStickDisplay();
+    void checkDPadButtonDisplay();
+    void checkAxisButtonDisplay();
+    void checkButtonDisplay();
+
+    void checkStickEmptyDisplay();
+    void checkDPadButtonEmptyDisplay();
+    void checkAxisButtonEmptyDisplay();
+    void checkButtonEmptyDisplay();
+    void editCurrentProfileItemText(QString text);
+    void refreshCopySetActions();
+    void performSetCopy();
+    void disableCopyCurrentSet();
+    void refreshSetButtons();
+
+#ifdef USE_SDL_2
+    void openGameControllerMappingWindow();
+    void propogateMappingUpdate(QString mapping, InputDevice *device);
+#endif
 };
 
 #endif // JOYTABWIDGET_H

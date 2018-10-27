@@ -15,50 +15,46 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "common.h"
-
-#include "messagehandler.h"
-
-#include <QDebug>
 #include <QApplication>
 #include <QLibraryInfo>
 #ifdef Q_OS_WIN
 #include <QStandardPaths>
 #endif
 
+#include "common.h"
 
 namespace PadderCommon
 {
     QString preferredProfileDir(AntiMicroSettings *settings)
     {
-        qInstallMessageHandler(MessageHandler::myMessageOutput);
-
         QString lastProfileDir = settings->value("LastProfileDir", "").toString();
         QString defaultProfileDir = settings->value("DefaultProfileDir", "").toString();
-        QString lookupDir = QString();
+        QString lookupDir;
 
         if (!defaultProfileDir.isEmpty())
         {
             QFileInfo dirinfo(defaultProfileDir);
-
-            if (dirinfo.isDir() && dirinfo.isReadable()) lookupDir = defaultProfileDir;
+            if (dirinfo.isDir() && dirinfo.isReadable())
+            {
+                lookupDir = defaultProfileDir;
+            }
         }
 
         if (lookupDir.isEmpty() && !lastProfileDir.isEmpty())
         {
             QFileInfo dirinfo(lastProfileDir);
-
-            if (dirinfo.isDir() && dirinfo.isReadable()) lookupDir = lastProfileDir;
+            if (dirinfo.isDir() && dirinfo.isReadable())
+            {
+                lookupDir = lastProfileDir;
+            }
         }
 
         if (lookupDir.isEmpty())
         {
 #ifdef Q_OS_WIN
     #ifdef WIN_PORTABLE_PACKAGE
-
             QString portableProDir = QDir::currentPath().append("/profiles");
             QFileInfo portableProDirInfo(portableProDir);
-
             if (portableProDirInfo.isDir() && portableProDirInfo.isReadable())
             {
                 lookupDir = portableProDir;
@@ -70,7 +66,7 @@ namespace PadderCommon
     #else
             lookupDir =  QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     #endif
-#elif defined(Q_OS_UNIX)
+#else
             lookupDir = QDir::homePath();
 #endif
         }
@@ -80,31 +76,32 @@ namespace PadderCommon
 
     QStringList arguments(int &argc, char **argv)
     {
-        qInstallMessageHandler(MessageHandler::myMessageOutput);
+        QStringList list;
 
-        QStringList list = QStringList();
-
-        for (int a = 0; a < argc; ++a)
+        for (int a = 0; a < argc; ++a) {
             list << QString::fromLocal8Bit(argv[a]);
+        }
 
         return list;
     }
 
     QStringList parseArgumentsString(QString tempString)
     {
-        qInstallMessageHandler(MessageHandler::myMessageOutput);
-
         bool inside = (!tempString.isEmpty() && tempString.at(0) == QChar('"'));
         QStringList tempList = tempString.split(QRegExp("\""), QString::SkipEmptyParts);
-        QStringList finalList = QStringList();
+        QStringList finalList;
         QStringListIterator iter(tempList);
-
         while (iter.hasNext())
         {
             QString temp = iter.next();
-
-            if (inside) finalList.append(temp);
-            else finalList.append(temp.split(QRegExp("\\s+"), QString::SkipEmptyParts));
+            if (inside)
+            {
+                finalList.append(temp);
+            }
+            else
+            {
+                finalList.append(temp.split(QRegExp("\\s+"), QString::SkipEmptyParts));
+            }
 
             inside = !inside;
         }
@@ -122,8 +119,6 @@ namespace PadderCommon
                            QTranslator *appTranslator,
                            QString language)
     {
-        qInstallMessageHandler(MessageHandler::myMessageOutput);
-
         // Remove application specific translation strings
         qApp->removeTranslator(translator);
 
@@ -155,16 +150,26 @@ namespace PadderCommon
 
     void lockInputDevices()
     {
-        qInstallMessageHandler(MessageHandler::myMessageOutput);
-
         sdlWaitMutex.lock();
+        /*editingLock.lockForWrite();
+        editingBindings = true;
+        editingLock.unlock();
+
+        waitMutex.lock();
+        //editingBindings = true;
+        waitThisOut.wait(&waitMutex);
+        */
     }
 
     void unlockInputDevices()
     {
-        qInstallMessageHandler(MessageHandler::myMessageOutput);
-
         sdlWaitMutex.unlock();
+        /*editingLock.lockForWrite();
+        editingBindings = false;
+        editingLock.unlock();
+
+        waitMutex.unlock();
+        */
     }
 
     QWaitCondition waitThisOut;
