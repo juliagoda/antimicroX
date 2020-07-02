@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+
 #ifndef JOYCONTROLSTICKEDITDIALOG_H
 #define JOYCONTROLSTICKEDITDIALOG_H
 
@@ -36,7 +36,7 @@ class JoyControlStickEditDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit JoyControlStickEditDialog(JoyControlStick *stick, QWidget *parent = nullptr);
+    explicit JoyControlStickEditDialog(JoyControlStick *stick, bool keypadUnlocked, QWidget *parent = nullptr);
    // JoyControlStickEditDialog(QWidget *parent = nullptr);
     ~JoyControlStickEditDialog();
     
@@ -45,6 +45,7 @@ protected:
 
 private:
     Ui::JoyControlStickEditDialog *ui;
+    bool keypadUnlocked;
     JoyControlStickEditDialogHelper& getHelperLocal();
 
     JoyControlStick *stick;

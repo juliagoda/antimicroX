@@ -30,7 +30,6 @@ AutoProfileInfo::AutoProfileInfo(QString uniqueID, QString profileLocation,
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    //setGUID(guid);
     setUniqueID(uniqueID);
     setProfileLocation(profileLocation);
     setExe(exe);
@@ -45,7 +44,6 @@ AutoProfileInfo::AutoProfileInfo(QString uniqueID, QString profileLocation,
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    //setGUID(guid);
     setUniqueID(uniqueID);
     setProfileLocation(profileLocation);
     setActive(active);
@@ -67,20 +65,6 @@ AutoProfileInfo::~AutoProfileInfo()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 }
-
-//void AutoProfileInfo::setGUID(QString guid)
-//{
-//    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-//    this->guid = guid;
-//}
-
-//QString AutoProfileInfo::getGUID() const
-//{
-//    qInstallMessageHandler(MessageHandler::myMessageOutput);
-
-//    return guid;
-//}
 
 
 void AutoProfileInfo::setUniqueID(QString uniqueID)

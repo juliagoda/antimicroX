@@ -3,7 +3,7 @@ ARG USER=docker
 ARG UID=1000
 ARG GID=1000
 
-LABEL description="antimicroX from last commit of master branch on Github. See https://github.com/juliagoda/antimicroX" 
+LABEL description="antimicroX version 3.0 on Github. See https://github.com/juliagoda/antimicroX" 
 MAINTAINER Jagoda Górska <juliagoda.pl@protonmail.com>
 
 
@@ -28,6 +28,7 @@ RUN apt-get -y update && apt-get install -y \
     libxi-dev \
     libxtst-dev \
     libx11-dev \
+    libqt5x11extras5-dev \
     libxrender-dev \
     libxext-dev \
     itstool \
@@ -37,7 +38,7 @@ RUN apt-get -y update && apt-get install -y \
 
 
 
-RUN git clone https://github.com/juliagoda/antimicroX.git && cd antimicroX
+RUN git clone --depth 1 https://github.com/juliagoda/antimicroX.git --branch 3.0 --single-branch 
 
 RUN addgroup --gid ${GID} ${USER} && \
     adduser --disabled-password --gecos '' --uid ${UID} --gid ${GID} ${USER} && \
@@ -48,15 +49,22 @@ RUN addgroup --gid ${GID} ${USER} && \
   
 
       
-COPY . /opt/antimicroX
+WORKDIR antimicroX
 
-WORKDIR /opt/antimicroX
+RUN mkdir -p build
+
+WORKDIR build
+
 
 # finally build project from github
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr . && \ 
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr .. && \ 
     make && \ 
-    make install && \
-    rm -rf opt/antimicroX
+    make install 
+    
+    
+WORKDIR ..
+
+RUN rm -rf build
     
 
 USER ${UID}:${GID}

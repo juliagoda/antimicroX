@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef JOYDPADXML_H
 #define JOYDPADXML_H
 
@@ -29,7 +29,7 @@ class JoyDPadXml : public QObject
 {
 
 public:
-    JoyDPadXml(T* joydpad, QObject *parent = nullptr);
+    explicit JoyDPadXml(T* joydpad, QObject *parent = nullptr);
 
     void readConfig(QXmlStreamReader *xml); // JoyDPadXml class
     void writeConfig(QXmlStreamWriter *xml); // JoyDPadXml class

@@ -36,7 +36,7 @@
 #include <QList>
 
 
-AxisEditDialog::AxisEditDialog(JoyAxis *axis, QWidget *parent) :
+AxisEditDialog::AxisEditDialog(JoyAxis *axis, bool keypadUnlocked, QWidget *parent) :
     QDialog(parent, Qt::Window),
     ui(new Ui::AxisEditDialog)
 {
@@ -46,6 +46,7 @@ AxisEditDialog::AxisEditDialog(JoyAxis *axis, QWidget *parent) :
 
     setAxisThrottleConfirm = new SetAxisThrottleDialog(axis, this);
     m_axis = axis;
+    this->keypadUnlocked = keypadUnlocked;
 
     updateWindowTitleAxisName();
 
@@ -250,6 +251,7 @@ void AxisEditDialog::implementAxisPresets(int index)
             pbuttonslot = new JoyButtonSlot(AntKeyMapper::getInstance()->returnVirtualKey(QtKeyMapperBase::AntKey_KP_6), QtKeyMapperBase::AntKey_KP_6, JoyButtonSlot::JoyKeyboard, this);
         break;
 
+        case 0:
         case 11:
             JoyAxisButton *nbutton = m_axis->getNAxisButton();
             JoyAxisButton *pbutton = m_axis->getPAxisButton();
@@ -259,6 +261,9 @@ void AxisEditDialog::implementAxisPresets(int index)
 
             refreshNButtonLabel();
             refreshPButtonLabel();
+
+            nbutton->buildActiveZoneSummaryString();
+            pbutton->buildActiveZoneSummaryString();
         break;
 
     }
@@ -374,7 +379,7 @@ void AxisEditDialog::openAdvancedPDialog()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    ButtonEditDialog *dialog = new ButtonEditDialog(m_axis->getPAxisButton(), m_axis->getPAxisButton()->getParentSet()->getInputDevice(),  this);
+    ButtonEditDialog *dialog = new ButtonEditDialog(m_axis->getPAxisButton(), m_axis->getPAxisButton()->getParentSet()->getInputDevice(), keypadUnlocked,  this);
     dialog->show();
 
     connect(dialog, &ButtonEditDialog::finished, this, &AxisEditDialog::refreshPButtonLabel);
@@ -385,7 +390,7 @@ void AxisEditDialog::openAdvancedNDialog()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    ButtonEditDialog *dialog = new ButtonEditDialog(m_axis->getNAxisButton(), m_axis->getNAxisButton()->getParentSet()->getInputDevice(), this);
+    ButtonEditDialog *dialog = new ButtonEditDialog(m_axis->getNAxisButton(), m_axis->getNAxisButton()->getParentSet()->getInputDevice(), keypadUnlocked, this);
     dialog->show();
 
     connect(dialog, &ButtonEditDialog::finished, this, &AxisEditDialog::refreshNButtonLabel);

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef JOYTABWIDGET_H
 #define JOYTABWIDGET_H
 
@@ -80,6 +80,7 @@ protected:
     void reconnectCheckUnsavedEvent();
     void fillSetButtons(SetJoystick *set); // JoyTabWidgetSets class
     void removeSetButtons(SetJoystick *set); // JoyTabWidgetSets class
+    bool isKeypadUnlocked();
 
     static const int DEFAULTNUMBERPROFILES = 5;
 

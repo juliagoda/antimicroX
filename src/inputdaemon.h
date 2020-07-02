@@ -16,11 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef INPUTDAEMONTHREAD_H
 #define INPUTDAEMONTHREAD_H
 
 #include "gamecontroller/gamecontroller.h"
+//#include "fakeclasses/xbox360wireless.h"
 #include <SDL2/SDL_events.h>
 
 
@@ -42,10 +43,14 @@ public:
                           QObject *parent=0);
     ~InputDaemon();
 
+
 protected:
     InputDeviceBitArrayStatus* createOrGrabBitStatusEntry(
             QHash<InputDevice*, InputDeviceBitArrayStatus*> *statusHash,
             InputDevice *device, bool readCurrent=true);
+
+    QString getJoyInfo(SDL_JoystickGUID sdlvalue);
+    QString getJoyInfo(Uint16 sdlvalue);
 
     void firstInputPass(QQueue<SDL_Event> *sdlEventQueue);
     void secondInputPass(QQueue<SDL_Event> *sdlEventQueue);
@@ -77,7 +82,7 @@ public slots:
     void startWorker();
     void refreshMapping(QString mapping, InputDevice *device);
     void removeDevice(InputDevice *device);
-    void addInputDevice(int index);
+    void addInputDevice(int index, QMap<QString,int>& uniques, int &counterUniques, bool &duplicatedGamepad);
     void refreshIndexes();
 
 private slots:
@@ -104,6 +109,7 @@ private:
     QThread *sdlWorkerThread;
     AntiMicroSettings *m_settings;
     QTimer pollResetTimer;
+    //SDL_Joystick* xbox360;
 };
 
 #endif // INPUTDAEMONTHREAD_H

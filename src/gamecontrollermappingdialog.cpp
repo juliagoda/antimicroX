@@ -286,10 +286,6 @@ void GameControllerMappingDialog::axisAssign(int axis, int value)
 
                 ui->mappingStringPlainTextEdit->document()->setPlainText(generateSDLMappingString());
         }
-        else
-        {
-            skip = true;
-        }
     }
 }
 
@@ -622,6 +618,7 @@ void GameControllerMappingDialog::obliterate()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
+    disconnect(this, &GameControllerMappingDialog::finished, this, &GameControllerMappingDialog::enableButtonEvents);
     this->done(QDialogButtonBox::DestructiveRole);
 }
 

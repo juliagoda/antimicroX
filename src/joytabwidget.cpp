@@ -520,6 +520,13 @@ JoyTabWidget::JoyTabWidget(InputDevice *joystick, AntiMicroSettings *settings, Q
 
 }
 
+bool JoyTabWidget::isKeypadUnlocked()
+{
+    if (m_settings == nullptr) return false;
+
+    return m_settings->value("AttachNumKeypad", false).toBool();
+}
+
 void JoyTabWidget::openConfigFileDialog()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
@@ -603,8 +610,9 @@ void JoyTabWidget::showButtonDialog()
             qDebug() << "text data is: " << eachAssigned->getTextData();
         }
     }
+    
 
-    ButtonEditDialog *dialog = new ButtonEditDialog(button, m_joystick, this);
+    ButtonEditDialog *dialog = new ButtonEditDialog(button, m_joystick, isKeypadUnlocked(), this);
     dialog->show();
 }
 
@@ -615,7 +623,7 @@ void JoyTabWidget::showAxisDialog()
     JoyAxisWidget *axisWidget = qobject_cast<JoyAxisWidget*>(sender()); // static_cast
     JoyAxis *axis = axisWidget->getAxis();
 
-    axisDialog = new AxisEditDialog (axis, this);
+    axisDialog = new AxisEditDialog (axis, isKeypadUnlocked(), this);
     axisDialog->show();
 }
 
@@ -732,13 +740,13 @@ void JoyTabWidget::resetJoystick()
     msg.setText(tr("Do you really want to reset buttons settings for joystick?"));
     int result = msg.exec();
 
-    if (result == QMessageBox::Yes) {
+    if (result == QMessageBox::Yes)
+    {
 
         int currentIndex = configBox->currentIndex();
+
         if (currentIndex != 0)
         {
-            QString filename = configBox->itemData(currentIndex).toString();
-
             removeCurrentButtons();
 
             QMetaObject::invokeMethod(&tabHelper, "reInitDevice", Qt::BlockingQueuedConnection);
@@ -748,6 +756,7 @@ void JoyTabWidget::resetJoystick()
             refreshCopySetActions();
 
             XMLConfigReader *reader = tabHelper.getReader();
+
             if (!reader->hasError())
             {
                 configBox->setItemIcon(currentIndex, QIcon());
@@ -780,6 +789,8 @@ void JoyTabWidget::resetJoystick()
                 QTextStream error(stderr);
                 error << reader->getErrorString() << endl;
             }
+
+            displayProfileEditNotification();
         }
         else
         {
@@ -1002,12 +1013,6 @@ void JoyTabWidget::saveSettings()
     int currentjoy = 1;
 
     QString identifier = m_joystick->getStringIdentifier();
-
-//    convToUniqueIDControllerGroupSett(m_settings, QString("Controller%1").arg(m_joystick->getGUIDString()), QString("Controller%1").arg(m_joystick->getUniqueIDString()));
-//    convToUniqueIDControllerGroupSett(m_settings, QString("Controller%1ConfigFile%2").arg(m_joystick->getGUIDString()), QString("Controller%1ConfigFile%2").arg(m_joystick->getUniqueIDString()));
-//    convToUniqueIDControllerGroupSett(m_settings, QString("Controller%1LastSelected").arg(m_joystick->getGUIDString()), QString("Controller%1LastSelected").arg(m_joystick->getUniqueIDString()));
-//    convToUniqueIDControllerGroupSett(m_settings, QString("Controller%1ProfileName%2").arg(m_joystick->getGUIDString()), QString("Controller%1ProfileName%2").arg(m_joystick->getUniqueIDString()));
-
     QString controlEntryPrefix = QString("Controller%1").arg(identifier);
     QString controlEntryString = QString("Controller%1ConfigFile%2").arg(identifier);
     QString controlEntryLastSelected = QString("Controller%1LastSelected").arg(identifier);
@@ -1402,7 +1407,7 @@ void JoyTabWidget::showQuickSetDialog()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    ButtonEditDialog *dialog = new ButtonEditDialog(m_joystick, this);
+    ButtonEditDialog *dialog = new ButtonEditDialog(m_joystick, isKeypadUnlocked(), this);
     connect(dialog, &ButtonEditDialog::finished, this, &JoyTabWidget::refreshButtons);
     dialog->show();
 }
@@ -2047,7 +2052,7 @@ void JoyTabWidget::fillSetButtons(SetJoystick *set)
             }
 
             QWidget *groupContainer = new QWidget(stickGroup);
-            StickPushButtonGroup *stickButtonGroup = new StickPushButtonGroup(stick, displayingNames, groupContainer);
+            StickPushButtonGroup *stickButtonGroup = new StickPushButtonGroup(stick, isKeypadUnlocked(), displayingNames, groupContainer);
             if (hideEmptyButtons)
             {
                 connect(stickButtonGroup, &StickPushButtonGroup::buttonSlotChanged, this, &JoyTabWidget::checkStickEmptyDisplay);
@@ -2115,7 +2120,7 @@ void JoyTabWidget::fillSetButtons(SetJoystick *set)
             }
 
             QWidget *groupContainer = new QWidget(hatGroup);
-            DPadPushButtonGroup *dpadButtonGroup = new DPadPushButtonGroup(dpad, displayingNames, groupContainer);
+            DPadPushButtonGroup *dpadButtonGroup = new DPadPushButtonGroup(dpad, isKeypadUnlocked(), displayingNames, groupContainer);
             if (hideEmptyButtons)
             {
                 connect(dpadButtonGroup, &DPadPushButtonGroup::buttonSlotChanged, this, &JoyTabWidget::checkDPadButtonEmptyDisplay);
@@ -2166,7 +2171,7 @@ void JoyTabWidget::fillSetButtons(SetJoystick *set)
             }
 
             QWidget *groupContainer = new QWidget(hatGroup);
-            DPadPushButtonGroup *dpadButtonGroup = new DPadPushButtonGroup(vdpad, displayingNames, groupContainer);
+            DPadPushButtonGroup *dpadButtonGroup = new DPadPushButtonGroup(vdpad, isKeypadUnlocked(), displayingNames, groupContainer);
             if (hideEmptyButtons)
             {
                 connect(dpadButtonGroup, &DPadPushButtonGroup::buttonSlotChanged, this, &JoyTabWidget::checkDPadButtonEmptyDisplay);

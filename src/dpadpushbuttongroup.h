@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef DPADPUSHBUTTONGROUP_H
 #define DPADPUSHBUTTONGROUP_H
 
@@ -34,7 +34,7 @@ class DPadPushButtonGroup : public QGridLayout
     Q_OBJECT
 
 public:
-    explicit DPadPushButtonGroup(JoyDPad *dpad, bool displayNames = false, QWidget *parent = nullptr);
+    explicit DPadPushButtonGroup(JoyDPad *dpad, bool keypadUnlocked, bool displayNames = false, QWidget *parent = nullptr);
 
     JoyDPad *getDPad() const;
 
@@ -55,6 +55,7 @@ private slots:
 
 private:
     JoyDPad *dpad;
+    bool keypadUnlocked;
     bool displayNames;
 
     JoyDPadButtonWidget *upButton;

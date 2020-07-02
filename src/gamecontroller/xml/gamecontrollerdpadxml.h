@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef GAMECONTROLLERDPADXML_H
 #define GAMECONTROLLERDPADXML_H
 
@@ -30,7 +30,7 @@ class GameControllerDPadXml : public JoyDPadXml<VDPad>
     Q_OBJECT
 
 public:
-    GameControllerDPadXml(GameControllerDPad* gameContrDpad, QObject* parent = nullptr);
+    explicit GameControllerDPadXml(GameControllerDPad* gameContrDpad, QObject* parent = nullptr);
 
     void readJoystickConfig(QXmlStreamReader *xml);
 

@@ -15,11 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef JOYBUTTONSLOTXML_H
 #define JOYBUTTONSLOTXML_H
 
 #include <QObject>
+#include <QReadWriteLock>
 
 class QXmlStreamReader;
 class QXmlStreamWriter;
@@ -31,13 +32,21 @@ class JoyButtonSlotXml : public QObject
     Q_OBJECT
 
 public:
-     JoyButtonSlotXml(JoyButtonSlot *joyBtnSlot, QObject *parent = nullptr);
+     explicit JoyButtonSlotXml(JoyButtonSlot *joyBtnSlot, QObject *parent = nullptr);
 
      virtual void readConfig(QXmlStreamReader *xml);
      virtual void writeConfig(QXmlStreamWriter *xml);
+     static int timeoutWrite;
+     static int timeoutRead;
 
 private:
+     void writeEachSlot(QXmlStreamWriter *xml, JoyButtonSlot *joyBtnSlot);
+     void readEachSlot(QXmlStreamReader *xml,  JoyButtonSlot* joyBtnSlot, QString &profile, QString &tempStringData, QString &extraStringData);
+     void setSlotData(JoyButtonSlot *joyBtnSlot, QString profile, QString tempStringData, QString extraStringData);
+
      JoyButtonSlot* m_joyBtnSlot;
+     QReadWriteLock xmlLock;
+
 };
 
 #endif // JOYBUTTONSLOTXML_H

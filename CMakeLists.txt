@@ -28,6 +28,9 @@ if(UNIX)
     set(CMAKE_MODULE_PATH ${ECM_MODULE_DIR})
 endif(UNIX)
 
+# for systems like Rapsberry Pi
+list(APPEND CMAKE_PREFIX_PATH "/usr/lib/arm-linux-gnueabihf")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" "${CMAKE_ROOT}/Modules")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -61,9 +64,13 @@ else()
 endif()
 
 # The version number.
-set(ANTIMICROX_MAJOR_VERSION 2)
-set(ANTIMICROX_MINOR_VERSION 25)
+set(ANTIMICROX_MAJOR_VERSION 3)
+set(ANTIMICROX_MINOR_VERSION 0)
 set(ANTIMICROX_PATCH_VERSION 0)
+
+# antilib soname version
+set(ANTILIB_MAJOR_VERSION 1)
+set(ANTILIB_VERSION "${ANTILIB_MAJOR_VERSION}")
 
 option(WITH_TESTS "Allow tests for classes" OFF)
 
@@ -76,10 +83,12 @@ if(UNIX)
     option(WITH_UINPUT "Compile with support for uinput. uinput will be usable to simulate events." ON)
     option(WITH_XTEST "Compile with support for XTest.  XTest will be usable to simulate events." ON)
     option(APPDATA "Build project with AppData file support." ON)
+    option(ANTILIB_PATH "Set your own path for antilib" OFF)
 endif(UNIX)
 
 option(UPDATE_TRANSLATIONS "Call lupdate to update translation files from source." OFF)
 option(TRANS_KEEP_OBSOLETE "Add -noobsolete option to lupdate command to get rid of old text entries" OFF)
+option(ATTACH_FAKE_CLASSES "Fake classes can be used in application to tests functionalities" OFF)
 
 
 # Use pkg-config to find SDL library.
@@ -342,6 +351,16 @@ set(antimicroX_HEADERS
     src/xmlconfigwriter.h
 )
 
+if(ATTACH_FAKE_CLASSES)
+    LIST(APPEND antimicroX_SOURCES
+        src/fakeclasses/xbox360wireless.cpp
+    )
+
+    LIST(APPEND antimicroX_HEADERS
+        src/fakeclasses/xbox360wireless.h
+        )
+endif(ATTACH_FAKE_CLASSES)
+
 set(antimicroX_FORMS
     src/aboutdialog.ui
     src/addeditautoprofiledialog.ui
@@ -426,6 +445,7 @@ if (UNIX)
         find_package(Qt5Network REQUIRED)
         find_package(Qt5LinguistTools REQUIRED)
         find_package(Qt5Concurrent REQUIRED)
+        #find_package(Qt5Test REQUIRED)
 
         if (WITH_X11)
             find_package(Qt5X11Extras REQUIRED)
@@ -469,6 +489,19 @@ if(UNIX)
 endif(UNIX)
 
     if(UNIX)
+
+        if(ANTILIB_PATH)
+            ADD_DEFINITIONS(-DANTILIB_PATH="${ANTILIB_PATH}")
+
+            # Generally package manager takes care of this while installing the new library, but not always
+            # especially with cmake
+            ADD_DEFINITIONS(-DLD_LIBRARY_PATH="${ANTILIB_PATH}:${LD_LIBRARY_PATH}")
+
+            # those instructions have to be before add_executable() or add_library() is called, otherwise it has no effect
+            set(CMAKE_INSTALL_RPATH "${ANTILIB_PATH}")
+            set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+        endif()
+
             add_library( antilib
                 SHARED
                 ${antimicroX_HEADERS_MOC}
@@ -477,21 +510,35 @@ endif(UNIX)
                 ${antimicroX_RESOURCES_RCC}
             )
 
+            set_target_properties(antilib PROPERTIES
+                SOVERSION ${ANTILIB_VERSION}
+            )
+            
+            
+            #target_link_libraries (antilib Qt5::Widgets Qt5::Core Qt5::Test Qt5::Gui Qt5::Network Qt5::Concurrent ${SDL_LIBRARY} ${LIBS})
             target_link_libraries (antilib Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Concurrent ${SDL_LIBRARY} ${LIBS})
 
             if (WITH_X11)
                 target_link_libraries(antilib Qt5::X11Extras)
             endif()
-
+            
+            
             add_executable(antimicroX ${antimicroX_MAIN})
             target_link_libraries (antimicroX antilib Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Concurrent)
+
     endif(UNIX)
 
 
 # Specify out directory for final executable.
 if(UNIX)
         install(TARGETS antimicroX RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-        install(TARGETS antilib DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+
+        if(ANTILIB_PATH)
+            install(TARGETS antilib DESTINATION "${ANTILIB_PATH}")
+        else()
+            install(TARGETS antilib DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+        endif()
+
         install(FILES ${antimicroX_HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/antimicroX")
 endif(UNIX)
 
@@ -552,12 +599,17 @@ if(UNIX)
     ecm_install_icons(ICONS src/icons/application/32x32/apps/32-apps-com.github.juliagoda.antimicroX.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons)
     ecm_install_icons(ICONS src/icons/application/48x48/apps/48-apps-com.github.juliagoda.antimicroX.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons)
     ecm_install_icons(ICONS src/icons/application/64x64/apps/64-apps-com.github.juliagoda.antimicroX.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons)
+    ecm_install_icons(ICONS src/icons/application/scalable/apps/sc-apps-com.github.juliagoda.antimicroX.svg DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons)
 
     install(FILES src/images/antimicroX.png src/images/antimicroX_trayicon.png src/images/axis.png src/images/button.png src/images/controllermap.png DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicroX/images")
 
     install(FILES src/icons/index.theme DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicroX/icons/hicolor")
+    install(FILES Changelog DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/antimicroX")
     install(FILES other/com.github.juliagoda.antimicroX.desktop DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
     install(FILES other/com.github.juliagoda.antimicroX.xml DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/mime/packages")
+
+    # Copy current Changelog file to location that the resource file expects.
+    install(FILES Changelog DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicroX")
 endif(UNIX)
 
 # Add man page for *nix platforms.
@@ -593,9 +645,7 @@ configure_file(
     "${PROJECT_BINARY_DIR}/config.h"
 )
 
-# Copy current Changelog file to location that the resource file expects.
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Changelog DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src/)
-
 
 if(WITH_TESTS)
     enable_testing ()
@@ -622,7 +672,7 @@ if(UNIX) #building .deb package
   set(CPACK_DEBIAN_PACKAGE_MAINTAINER "juliagoda")
   set(CPACK_STRIP_FILES "")
   set(CPACK_SOURCE_STRIP_FILES "")
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt5-default, libsdl2-2.0-0")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt5-default, libsdl2-2.0-0, libqt5x11extras5")
   endif()
 
 set(CPACK_PACKAGE_EXECUTABLES "antimicroX" "antimicroX")

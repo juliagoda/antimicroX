@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef ADDEDITAUTOPROFILEDIALOG_H
 #define ADDEDITAUTOPROFILEDIALOG_H
 
@@ -46,7 +46,6 @@ public:
     ~AddEditAutoProfileDialog();
 
     AutoProfileInfo* getAutoProfile() const;
-    //QString getOriginalGUID() const;
     QString getOriginalUniqueID() const;
     QString getOriginalExe() const;
     QString getOriginalWindowClass() const;
@@ -56,7 +55,6 @@ public:
     AntiMicroSettings *getSettings() const;
     bool getEditForm() const;
     bool getDefaultInfo() const;
-    // QList<QString> const& getReservedGUIDs();
     QList<QString> const& getReservedUniques();
 
 
@@ -70,7 +68,6 @@ private slots:
     void openProfileBrowseDialog();
     void openApplicationBrowseDialog();
     void saveAutoProfileInformation();
-    //void checkForReservedGUIDs(int index);
     void checkForReservedUniques(int index);
     void checkForDefaultStatus();
     void windowPropAssignment(CapturedWindowInfoDialog *dialog);
@@ -87,9 +84,7 @@ private:
     AntiMicroSettings *settings;
     bool editForm;
     bool defaultInfo;
-    //QList<QString> reservedGUIDs;
     QList<QString> reservedUniques;
-    //QString originalGUID;
     QString originalUniqueID;
     QString originalExe;
     QString originalWindowClass;

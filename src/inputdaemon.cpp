@@ -28,6 +28,7 @@
 #include "antimicrosettings.h"
 #include "inputdevicebitarraystatus.h"
 
+
 #include <QDebug>
 #include <QTime>
 #include <QTimer>
@@ -46,6 +47,8 @@ InputDaemon::InputDaemon(QMap<SDL_JoystickID, InputDevice*> *joysticks,
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
     m_joysticks = joysticks;
+    //Xbox360Wireless* xbox360class = new Xbox360Wireless();
+    //xbox360 = xbox360class->getResult();
     this->stopped = false;
     m_graphical = graphical;
     m_settings = settings;
@@ -141,6 +144,24 @@ void InputDaemon::run ()
     PadderCommon::inputDaemonMutex.unlock();
 }
 
+QString InputDaemon::getJoyInfo(SDL_JoystickGUID sdlvalue)
+{
+    char buffer[65] = {'0'};
+
+    SDL_JoystickGetGUIDString(sdlvalue, buffer, sizeof(buffer));
+
+    return QString(buffer);
+}
+
+QString InputDaemon::getJoyInfo(Uint16 sdlvalue)
+{
+    char buffer[50] = {'0'};
+
+    sprintf (buffer, "%u", sdlvalue);
+
+    return QString(buffer);
+}
+
 void InputDaemon::refreshJoysticks()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
@@ -165,10 +186,15 @@ void InputDaemon::refreshJoysticks()
     m_settings->getLock()->lock();
     m_settings->beginGroup("Mappings");
 
+    QMap<QString,int> uniques = QMap<QString,int>();
+    int counterUniques = 1;
+    bool duplicatedGamepad = false;
+
     for (int i = 0; i < SDL_NumJoysticks(); i++)
     {
 #ifdef USE_NEW_REFRESH
         int index = i;
+
 
         // Check if device is considered a Game Controller at the start.
         if (SDL_IsGameController(index))
@@ -183,41 +209,23 @@ void InputDaemon::refreshJoysticks()
                 // Check if device has already been grabbed.
                 if (!m_joysticks->contains(tempJoystickID))
                 {
-//                    QString guidText = QString();
-//                    SDL_JoystickGUID tempGUID = SDL_JoystickGetGUID(sdlStick);
-//                    char guidString[65] = {'0'};
-//                    SDL_JoystickGetGUIDString(tempGUID, guidString, sizeof(guidString));
-//                    guidText = QString(guidString);
+                    QString guidText = getJoyInfo(SDL_JoystickGetGUID(sdlStick));
 
-//                    bool disableGameController = m_settings->value(QString("%1Disable").arg(guidText), false).toBool();
+                    QString vendor = getJoyInfo(SDL_GameControllerGetVendor(controller));
 
-                    QString guidText = QString();
+                    QString productID = getJoyInfo(SDL_GameControllerGetProduct(controller));
 
-                    SDL_JoystickGUID tempGUID = SDL_JoystickGetGUID(sdlStick);
-                    char guidString[65] = {'0'};
-                    SDL_JoystickGetGUIDString(tempGUID, guidString, sizeof(guidString));
-                    guidText = QString(guidString);
-
-                    QString vendor = QString();
-
-                    if (controller != nullptr)
+                    if (uniques.contains(guidText))
                     {
-                            Uint16 tempVendor = SDL_GameControllerGetVendor(controller);
-                            char buffer [50];
-                            sprintf (buffer, "%u", tempVendor);
+                        productID = getJoyInfo(SDL_GameControllerGetProduct(controller) + ++uniques[guidText]);
+                        duplicatedGamepad = true;
 
-                            vendor = QString(buffer);
+                        // previous value will be erased in map anyway
+                        uniques.insert(guidText, uniques[guidText]);
                     }
-
-                    QString productID = QString();
-
-                    if (controller != nullptr)
+                    else
                     {
-                            Uint16 tempProduct = SDL_GameControllerGetProduct(controller);
-                            char buffer [50];
-                            sprintf (buffer, "%u", tempProduct);
-
-                            productID = QString(buffer);
+                        uniques.insert(guidText, counterUniques);
                     }
 
                     convertMappingsToUnique(m_settings, guidText, guidText + vendor + productID);
@@ -227,7 +235,11 @@ void InputDaemon::refreshJoysticks()
                     // Check if user has designated device Joystick mode.
                     if (!disableGameController)
                     {
-                        GameController *damncontroller = new GameController(controller, index, m_settings, this);
+                        int resultDuplicated = 0;
+                        if (duplicatedGamepad) resultDuplicated = uniques.value(guidText);
+
+                        GameController *damncontroller = new GameController(controller, index, m_settings, resultDuplicated, this);
+                        duplicatedGamepad = false;
                         connect(damncontroller, &GameController::requestWait, eventWorker, &SDLEventReader::haltServices);
                         m_joysticks->insert(tempJoystickID, damncontroller);
                         trackcontrollers.insert(tempJoystickID, damncontroller);
@@ -408,9 +420,15 @@ void InputDaemon::refreshMapping(QString mapping, InputDevice *device)
 
     bool found = false;
 
+    QMap<QString,int> uniques = QMap<QString,int>();
+    int counterUniques = 1;
+    bool duplicatedGamepad = false;
+
     for (int i = 0; (i < SDL_NumJoysticks()) && !found; i++)
+   // for (int i = 0; (i < 1) && !found; i++)
     {
         SDL_Joystick *joystick = SDL_JoystickOpen(i);
+       // SDL_Joystick *joystick = xbox360;
         SDL_JoystickID joystickID = SDL_JoystickInstanceID(joystick);
 
         if (device->getSDLJoystickID() == joystickID)
@@ -438,7 +456,27 @@ void InputDaemon::refreshMapping(QString mapping, InputDevice *device)
                     m_joysticks->remove(joystickID);
 
                     SDL_GameController *controller = SDL_GameControllerOpen(i);
-                    GameController *damncontroller = new GameController(controller, i, m_settings, this);
+
+                    QString guidText = getJoyInfo(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(controller)));
+
+                    if (uniques.contains(guidText))
+                    {
+                        ++uniques[guidText];
+                        duplicatedGamepad = true;
+
+                        // previous value will be erased in map anyway
+                        uniques.insert(guidText, uniques[guidText]);
+                    }
+                    else
+                    {
+                        uniques.insert(guidText, counterUniques);
+                    }
+
+                    int resultDuplicated = 0;
+                    if (duplicatedGamepad) resultDuplicated = counterUniques;
+
+                    GameController *damncontroller = new GameController(controller, i, m_settings, resultDuplicated, this);
+                    duplicatedGamepad = false;
                     connect(damncontroller, &GameController::requestWait, eventWorker, &SDLEventReader::haltServices);
                     SDL_Joystick *sdlStick = SDL_GameControllerGetJoystick(controller);
                     joystickID = SDL_JoystickInstanceID(sdlStick);
@@ -477,8 +515,10 @@ void InputDaemon::refreshIndexes()
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
     for (int i = 0; i < SDL_NumJoysticks(); i++)
+    //for (int i = 0; i < 1; i++)
     {
         SDL_Joystick *joystick = SDL_JoystickOpen(i);
+       // SDL_Joystick *joystick = xbox360;
         SDL_JoystickID joystickID = SDL_JoystickInstanceID(joystick);
         SDL_JoystickClose(joystick); // Make sure to decrement reference count
         InputDevice *tempdevice = m_joysticks->value(joystickID);
@@ -489,7 +529,7 @@ void InputDaemon::refreshIndexes()
     }
 }
 
-void InputDaemon::addInputDevice(int index)
+void InputDaemon::addInputDevice(int index, QMap<QString,int>& uniques, int& counterUniques, bool& duplicatedGamepad)
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
@@ -573,6 +613,9 @@ void InputDaemon::addInputDevice(int index)
     SDL_GameController *controller = SDL_GameControllerOpen(index);
     SDL_Joystick *joystick = SDL_JoystickOpen(index);
 
+   // SDL_Joystick *joystick = xbox360;
+   // SDL_GameController *controller = SDL_GameControllerFromInstanceID(xbox360->instance_id);
+
     if (joystick != nullptr)
     {
         SDL_JoystickID tempJoystickID_local = SDL_JoystickInstanceID(joystick);
@@ -619,7 +662,21 @@ void InputDaemon::addInputDevice(int index)
                     productID = QString(buffer);
             }
 
+            if (uniques.contains(guidText))
+            {
+                productID = getJoyInfo(SDL_GameControllerGetProduct(controller) + ++uniques[guidText]);
+                duplicatedGamepad = true;
+                uniques.insert(guidText, uniques[guidText]);
+            }
+            else
+            {
+                uniques.insert(guidText, counterUniques);
+            }
+
             convertMappingsToUnique(m_settings, guidText, guidText + vendor + productID);
+
+            int resultDuplicated = 0;
+            if (duplicatedGamepad) resultDuplicated = uniques[guidText];
 
             bool disableGameController = m_settings->value(QString("%1Disable").arg(guidText + vendor + productID), false).toBool();
 
@@ -629,6 +686,7 @@ void InputDaemon::addInputDevice(int index)
                 SDL_JoystickClose(joystick);
 
                 SDL_GameController *controller = SDL_GameControllerOpen(index);
+
                 if (controller != nullptr)
                 {
                     SDL_Joystick *sdlStick = SDL_GameControllerGetJoystick(controller);
@@ -636,7 +694,7 @@ void InputDaemon::addInputDevice(int index)
 
                     if (!m_joysticks->contains(tempJoystickID_local_2))
                     {
-                        GameController *damncontroller = new GameController(controller, index, m_settings, this);
+                        GameController *damncontroller = new GameController(controller, index, m_settings, resultDuplicated, this);
                         connect(damncontroller, &GameController::requestWait, eventWorker, &SDLEventReader::haltServices);
                         m_joysticks->insert(tempJoystickID_local_2, damncontroller);
                         trackcontrollers.insert(tempJoystickID_local_2, damncontroller);
@@ -646,6 +704,8 @@ void InputDaemon::addInputDevice(int index)
 
                         emit deviceAdded(damncontroller);
                     }
+
+                    duplicatedGamepad = false;
                 }
                 else
                 {
@@ -680,6 +740,7 @@ Joystick *InputDaemon::openJoystickDevice(int index)
 
     // Check if joystick is considered connected.
     SDL_Joystick *joystick = SDL_JoystickOpen(index);
+   // SDL_Joystick* joystick = xbox360;
     Joystick *curJoystick = nullptr;
 
     if (joystick != nullptr)
@@ -1039,6 +1100,10 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
+    QMap<QString,int> uniques = QMap<QString,int>();
+    int counterUniques = 1;
+    bool duplicatedGamepad = false;
+
     QHash<SDL_JoystickID, InputDevice*> activeDevices;
 
     while (!sdlEventQueue->isEmpty())
@@ -1192,7 +1257,7 @@ void InputDaemon::secondInputPass(QQueue<SDL_Event> *sdlEventQueue)
             case SDL_JOYDEVICEADDED:
             case SDL_CONTROLLERDEVICEADDED:
             {
-                addInputDevice(event.jdevice.which);
+                addInputDevice(event.jdevice.which, uniques, counterUniques, duplicatedGamepad);
                 break;
             }
 

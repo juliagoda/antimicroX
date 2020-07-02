@@ -1,4 +1,4 @@
-# antimicroX 2.25
+# antimicroX 3.0
 
 ## this program is not a part of the official AntiMicro, just like I never was. I cannot help with problems with version 2.23 and below
 
@@ -9,8 +9,9 @@
 4. [Wiki](#wiki)
 5. [Build Dependencies](#build-dependencies)  
     a. [Building Under Linux](#building-under-linux)  
-    b. [Running With Docker](#running-with-docker)  
-    c. [Building with Flatpak](#building-with-flatpak)  
+    b. [Building deb package](#building-deb-package)  
+    c. [Running With Docker](#running-with-docker)  
+    d. [Building AppImage](#building-appimage)  
 6. [Testing Under Linux](#testing-under-linux)  
 7. [Support](#support)  
 8. [Bugs](#bugs)  
@@ -29,8 +30,7 @@ means that your system has to be running an X environment in order to run
 this program.
 
 This program is currently supported under various Linux
-distributions, Windows (Vista and later), and FreeBSD. However functionality of application
-has been tested only on Linux (Arch Linux and Ubuntu). More systems will be tested in the future.
+distributions.
 
 Informations about all developers from AntiMicro team and main creator (Ryochan7) are included in 
 application. Their **old versions** are here:
@@ -75,8 +75,7 @@ http://www.gnu.org/licenses/gpl.txt
     --log-file <filename>          Choose a file for writing logs
     --eventgen (xtest|uinput)      Choose between using XTest support and uinput
                                    support for event generation. Use only if you have
-                                   enabled xtest and uinput options on Linux or vmulti
-                                   on Windows. Default: xtest.
+                                   enabled xtest and uinput options on Linux. Default: xtest.
     -l, --list                     Print information about joysticks detected by
                                    SDL. Use only if you have sdl library. You can 
                                    check your controller index, name or 
@@ -125,6 +124,16 @@ directory. Enter the following commands in order to build the program:
     make
     sudo make install
     
+or
+
+```
+cd antimicrox
+mkdir build && cd build
+cmake --build .
+sudo cmake --install .
+```
+
+
 If you're an Arch Linux or Arch Linux based distribution user:
 
 ```
@@ -145,8 +154,10 @@ from [AUR](https://aur.archlinux.org/packages/antimicrox-git/)
 | :--------- | :------------- | :----------- |
 | Arch Linux | Piotr Górski   | [antimicrox-git](https://aur.archlinux.org/packages/antimicrox-git) <sup>AUR</sup> |
 
+<br/>
 
-#### Building deb package
+### Building deb package
+Already built .deb files are available on [Release Page](https://github.com/juliagoda/antimicroX/releases)
 
 ```
     cd antimicroX
@@ -160,84 +171,77 @@ from [AUR](https://aur.archlinux.org/packages/antimicrox-git/)
 
 ### Running with Docker
 
-If you want to run application without building process and choose between various distributions, then [look here](https://hub.docker.com/r/juliagoda/antimicrox)
+If you want to run application without building process and choose between various distributions, then [look here](https://hub.docker.com/r/juliagoda/antimicrox)  
 
 <br/>
 
-### Building with Flatpak
+All full tags variations:
 
-#### Additional Dependencies
+- juliagoda/antimicrox:latest
 
-* flatpak 
-* flatpak-builder
+- juliagoda/antimicrox:3.0-ubuntu-bionic
 
+- juliagoda/antimicrox:3.0-fedora-latest
 
-#### Compilation & Installation
+- juliagoda/antimicrox:3.0-suseleap15.2
 
-This tutorial is about installing antimicroX with flatpak locally. As first you need a com.github.juliagoda.antimicroX.json file, that is placed in main folder. You can for example copy and paste content to local file. Link to raw content of json file is [here](https://raw.githubusercontent.com/juliagoda/antimicroX/master/com.github.juliagoda.antimicroX.json).
+<br/>
 
+Because the docker likes to replace the README on the docker hub website with this one. I need to add informations about how to run image:  
 
-1. Download and install Flatpak repo:
+You should as first:
 
-`flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo`
+`git pull juliagoda/antimicrox:3.0-ubuntu-bionic`
 
-2. Add a runtime with Qt and all KDE Frameworks 5
+where "3.0-ubuntu-bionic" is a tag and can be replaced by other chosen tag. Next we have to create group docker and add user to it. [Look here](https://docs.docker.com/engine/install/linux-postinstall/). To run GUI docker apps:
 
-`flatpak install flathub org.kde.Platform//5.11 org.kde.Sdk//5.11`
+`xhost +local:docker`
 
-3. Create new directories for building and creating repo
+To finally run image:
 
+`docker run -it -e DISPLAY=unix$DISPLAY --mount type=bind,source=/dev/input,target=/dev/input --device /dev/input --mount type=bind,source=/home/$USER,target=/home/$USER --net=host -e HOME=$HOME --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" --device /dev/dri:/dev/dri --workdir=$HOME antimicrox:3.0-ubuntu-bionic`
+
+This allows the use your files from your home directory and the use of your connected devices without other workarounds
+
+<br/>
+
+### Building AppImage
+
+<br/>
+
+Create build directory
+```bash
+mkdir build && cd ./build
 ```
-mkdir build-dir
-mkdir repo
+
+<br/>
+
+Download tools used for creating appimages (and make them executable)
+```bash  
+wget https://github.com/linuxdeploy/linuxdeploy/releases/downloacontinuous/linuxdeploy-x86_64.AppImage
+wget https://github.com/AppImage/AppImageKit/releases/downloacontinuous/appimagetool-x86_64.AppImage
+wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releasedownload/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+chmod +x linuxdeploy-x86_64.AppImage
+chmod +x appimagetool-x86_64.AppImage
+chmod +x linuxdeploy-plugin-qt-x86_64.AppImage
 ```
 
-4. Build antimicroX
+<br/>
 
-`flatpak-builder build-dir com.github.juliagoda.antimicroX.json`
+Build antimicroX and install it in AppDir directory
+```bash
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+make
+make install DESTDIR=AppDir
+```
 
-5. Test the build of application
+<br/>
 
-`flatpak-builder --run build-dir com.github.juliagoda.antimicroX.json antimicroX`
-
-6. Create repository for application
-
-`flatpak-builder --repo=repo --force-clean build-dir com.github.juliagoda.antimicroX.json`
-
-7. Add the repository to flatpak locally
-
-`flatpak --user remote-add --no-gpg-verify antimicroX repo`
-
-8. Install application
-
-`flatpak --user install antimicroX com.github.juliagoda.antimicroX`
-
-
-#### Run antimicroX
-
-If you have installed antimicroX locally with success, you can run application:
-
-`flatpak run com.github.juliagoda.antimicroX`
-
-
-
-#### Updating
-
-To update all your installed applications and runtimes to the latest version, execute:
-
-`flatpak update`
-
-
-#### Uninstall antimicroX
-
-1. Delete a remote repository
-
-`flatpak --user remote-delete antimicroX`
-
-2. Delete application
-
-`flatpak uninstall com.github.juliagoda.antimicroX`
-
+Create AppImage file
+```bash
+./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt
+./appimagetool-x86_64.AppImage AppDir/ --no-appstream
+```
 <br/>
 
 ## Testing Under Linux

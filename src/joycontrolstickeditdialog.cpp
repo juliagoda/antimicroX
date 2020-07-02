@@ -38,12 +38,13 @@
 #include <QWidget>
 
 
-JoyControlStickEditDialog::JoyControlStickEditDialog(JoyControlStick *stick, QWidget *parent) :
+JoyControlStickEditDialog::JoyControlStickEditDialog(JoyControlStick *stick, bool keypadUnlocked, QWidget *parent) :
     QDialog(parent, Qt::Window),
     ui(new Ui::JoyControlStickEditDialog),
     helper(stick)
 {
     ui->setupUi(this);
+    this->keypadUnlocked = keypadUnlocked;
 
     qInstallMessageHandler(MessageHandler::myMessageOutput);
     setAttribute(Qt::WA_DeleteOnClose);
@@ -329,11 +330,17 @@ void JoyControlStickEditDialog::implementPresets(int index)
 
             break;
         }
+        case 0:
         case 8:
         {
             QMetaObject::invokeMethod(&helper, "clearButtonsSlotsEventReset", Qt::BlockingQueuedConnection);
 
             ui->diagonalRangeSlider->setValue(45);
+
+            stick->getDirectionButton(JoyControlStick::StickUp)->buildActiveZoneSummaryString();
+            stick->getDirectionButton(JoyControlStick::StickDown)->buildActiveZoneSummaryString();
+            stick->getDirectionButton(JoyControlStick::StickLeft)->buildActiveZoneSummaryString();
+            stick->getDirectionButton(JoyControlStick::StickRight)->buildActiveZoneSummaryString();
 
             break;
         }
@@ -629,7 +636,7 @@ void JoyControlStickEditDialog::openModifierEditDialog()
 {
     qInstallMessageHandler(MessageHandler::myMessageOutput);
 
-    ButtonEditDialog *dialog = new ButtonEditDialog(stick->getModifierButton(), stick->getParentSet()->getInputDevice(), this);
+    ButtonEditDialog *dialog = new ButtonEditDialog(stick->getModifierButton(), stick->getParentSet()->getInputDevice(), keypadUnlocked, this);
     dialog->show();
 }
 

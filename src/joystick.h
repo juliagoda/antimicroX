@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef JOYSTICK_H
 #define JOYSTICK_H
 
@@ -42,6 +42,7 @@ public:
     virtual QString getUniqueIDString() override;
     virtual QString getVendorString() override;
     virtual QString getProductIDString() override;
+    virtual QString getProductVersion() override;
 
     virtual void closeSDLDevice() override;
     virtual SDL_JoystickID getSDLJoystickID() override;
@@ -49,18 +50,16 @@ public:
     virtual int getNumberRawButtons() override;
     virtual int getNumberRawAxes() override;
     virtual int getNumberRawHats() override;
+    void setCounterUniques(int counter) override;
 
     SDL_Joystick* getJoyhandle() const;
     virtual QString getXmlName() override;
-
-    InputDevice* getInputDevice();
 
 private:
     SDL_Joystick *m_joyhandle;
     SDL_GameController *controller;
     SDL_JoystickID joystickID;
-    InputDevice* m_inputDevice;
-
+    int counterUniques;
 };
 
 Q_DECLARE_METATYPE(Joystick*)

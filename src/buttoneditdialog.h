@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef BUTTONEDITDIALOGTWO_H
 #define BUTTONEDITDIALOGTWO_H
 
@@ -40,8 +40,8 @@ class ButtonEditDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit ButtonEditDialog(JoyButton* button, InputDevice* joystick, QWidget *parent = nullptr); // called for chosen button
-    explicit ButtonEditDialog(InputDevice* joystick, QWidget *parent = nullptr); // Accessed by pressing the "Quick Set" button
+    explicit ButtonEditDialog(JoyButton* button, InputDevice* joystick, bool isNumKeypad, QWidget *parent = nullptr); // called for chosen button
+    explicit ButtonEditDialog(InputDevice* joystick, bool isNumKeypad, QWidget *parent = nullptr); // Accessed by pressing the "Quick Set" button
     ButtonEditDialog(QWidget *parent = 0);
     ~ButtonEditDialog();
 
@@ -55,6 +55,7 @@ protected:
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void keyPressEvent(QKeyEvent *event);
 
+
 private:
     ButtonEditDialogHelper helper;
     Ui::ButtonEditDialog *ui;
@@ -65,6 +66,7 @@ private:
     QuickSetDialog *currentQuickDialog;
     bool ignoreRelease;
     bool withoutQuickSetDialog;
+    bool m_isNumKeypad;
     JoyButton* lastJoyButton;
 
     static ButtonEditDialog *instance;

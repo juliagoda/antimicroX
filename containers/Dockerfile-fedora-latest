@@ -3,7 +3,7 @@ ARG USER=docker
 ARG UID=1000
 ARG GID=1000
 
-LABEL description="antimicroX from last commit of master branch on Github. See https://github.com/juliagoda/antimicroX" 
+LABEL description="antimicroX version 3.0 on Github. See https://github.com/juliagoda/antimicroX" 
 MAINTAINER Jagoda Górska <juliagoda.pl@protonmail.com>
 
 
@@ -25,6 +25,7 @@ RUN dnf -y update && dnf clean all && dnf -y install \
     libX11-devel \
     libXtst-devel \
     libXi-devel \
+    qt5-qtx11extras-devel \
     mesa-libGL-devel \
     mesa-dri-drivers \
     autoconf \
@@ -44,25 +45,31 @@ RUN wget https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.24.0.tar.gz 
     rm -rf git-2.24.0
     
     
-RUN git clone https://github.com/juliagoda/antimicroX.git && cd antimicroX
+RUN git clone --depth 1 https://github.com/juliagoda/antimicroX.git --branch 3.0 --single-branch 
 
-COPY . /opt/antimicroX
-
-WORKDIR /opt/antimicroX
-
-# finally build project from github
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr . && \ 
-    make && \ 
-    make install && \
-    rm -rf opt/antimicroX
-  
-  
 RUN groupadd --gid ${GID} ${USER} && \
     adduser --uid ${UID} --gid ${GID} ${USER} && \
     usermod -p '' ${USER} && \
     usermod -a -G input ${USER} && \
     usermod -a -G tty ${USER} && \
     usermod -a -G games ${USER} 
+
+
+WORKDIR antimicroX
+
+RUN mkdir -p build
+
+WORKDIR build
+
+# finally build project from github
+RUN cmake -DCMAKE_INSTALL_PREFIX=/usr .. && \ 
+    make && \ 
+    make install
+  
+WORKDIR ..
+
+RUN rm -rf build
+
 
 USER ${UID}:${GID}
 

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+
 #ifndef COMMON_H
 #define COMMON_H
 
@@ -78,7 +78,7 @@ namespace PadderCommon
     extern MouseHelper mouseHelperObj;
 
     QString preferredProfileDir(AntiMicroSettings *settings);
-    QStringList arguments(int &argc, char **argv);
+    QStringList arguments(const int &argc, char **argv);
     QStringList parseArgumentsString(QString tempString);
     void reloadTranslations(QTranslator *translator,
                             QTranslator *appTranslator,
